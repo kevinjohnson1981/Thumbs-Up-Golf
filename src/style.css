@@ -1,0 +1,676 @@
+/* General Reset */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: rgb(175, 175, 175);
+  color: #000000;
+}
+
+/* Player name cell color for Ball Busterz */
+.player-name-header.team-red {
+  background-color: red;
+  color: lightgray;
+}
+.player-name-header.team-gold {
+  background-color: yellow;
+  color: black;
+}
+
+.player-name-header.team-black {
+  background-color: black;
+  color: white;
+}
+
+.player-name-header.team-blue {
+  background-color: rgb(1, 162, 255);
+  color: lightgreen;
+}
+
+.team-ballbusterz td {
+  background-color: rgb(255, 0, 0);
+  color: lightgray;
+}
+
+.team-goldentees td {
+  background-color: rgb(231, 235, 11);
+  color: black;
+}
+
+.team-blackteetitans td {
+  background-color: black;
+  color: white;
+}
+
+.team-justthetips td {
+  background-color: rgb(1, 162, 255);
+  color: lightgreen;
+}
+
+.team-red {
+  background-color: red;
+  color: lightgray;
+  border: 2px solid black;
+}
+
+.team-gold {
+  background-color: rgb(231, 235, 11);
+  color: black;
+  border: 2px solid white;
+}
+
+.team-black {
+  background-color: black;
+  color: lightgray;
+  border: 2px solid white;
+}
+
+.team-blue {
+  background-color: rgb(1, 162, 255);
+  color: lightgreen;
+  border: 2px solid lightgreen;
+}
+
+.highlight-red {
+  background-color: pink;
+  color: lightgray;
+}
+
+.highlight-gold {
+  background-color: lightyellow;
+  color: black;
+}
+
+.highlight-black {
+  background-color: gray;
+  color: lightgray;
+}
+
+.highlight-blue {
+  background-color: lightblue;
+  color: lightgreen;
+}
+
+
+
+/* Center all main content */
+.container {
+  max-width: 1000px; /* Control width */
+  margin-left: auto; /* Center horizontally */
+  margin-right: auto;
+  padding: 20px 20px;
+  padding-top: 0%;
+  text-align: center; /* Center text */
+}
+
+
+/* Section Spacing */
+.section {
+  margin-bottom: 20px;
+}
+
+.total-cell {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+/* Universal Form Elements */
+input {
+  width: 100%; /* Full width for mobile */
+  padding: 10px;
+  font-size: 18px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  border: 1px solid rgb(158, 158, 158); /* Light gray border */
+  border-radius: 15px; /* ✅ Rounded corners */
+}
+
+/* Style for dropdown (select) */
+select {
+  padding: 5px;
+  font-size: 12px;
+  margin: 5px;
+  width: auto; /* Fit content */
+  max-width: 200px; /* Optional: prevent too wide */
+  border: 2px solid rgb(158, 158, 158); /* Light gray border */
+  border-radius: 10px; /* ✅ Rounded corners */
+  background-color: #fff; /* White background */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+/* Form rows (label + dropdown on same line) */
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center horizontally */
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.form-row label {
+  margin: 0;
+  font-weight: bold;
+}
+
+.form-row select {
+  padding: 5px;
+  font-size: 14px;
+  border-radius: 10px;
+  width: auto;
+  max-width: 100px;
+}
+
+.vertical-text {
+  white-space: nowrap;
+  padding: 5px;
+  max-height: 100px;
+  overflow: hidden;
+  font-weight: bold;
+  font-size: 10px;
+  text-align: center; /* ✅ Center horizontally */
+  vertical-align: middle; /* ✅ Center vertically */
+}
+
+
+
+button {
+  padding: 10px 10px;
+  font-size: 14px;
+  background-color: rgb(105, 105, 105);
+  color: rgb(206, 206, 206);
+  border: rgb(255, 255, 255);
+  border-radius: 10px;
+  cursor: pointer;
+  width: auto; /* Prevents full-width stretch */
+  margin: 10px; /* Add spacing if needed */
+}
+
+button:hover {
+  background-color: #b8b8b8;
+}
+
+button:focus,
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.5);
+  broder: 2px black;
+}
+
+.vertical-button-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* spacing between buttons */
+  align-items: center; /* optional: centers buttons horizontally */
+}
+
+
+/* Label Styling */
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* ✅ Scrollable area */
+.table-wrapper {
+  max-height: 300px; /* Adjust height as needed */
+  max-width: 100vw;
+  overflow-y: auto; /* Allow vertical scrolling */
+  overflow-x: auto; /* Optional: allow horizontal if needed */
+  margin-top: 5px;
+  border: 5px solid rgb(75, 75, 75); /* Optional, for styling */
+  background-color: rgb(75, 75, 75);
+  border-radius: 10px; /* Optional, for styling */
+}
+
+/* Scorecard Table */
+table {
+  width: auto;
+  max-width: 100%;
+  min-width: 300px; /* Prevent too narrow */
+  border-collapse: collapse;
+  background-color: rgb(90, 200, 123);
+  margin-bottom: 0px;
+  border-radius: 10px;
+  overflow: hidden; /* Ensure corners stay rounded */
+  table-layout: auto; /* ✅ This is key for natural sizing */
+}
+
+th, td {
+  padding: 5px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 12px;
+  border: 2px solid rgb(78, 78, 78);
+  min-width: 10px; /* Adjust as needed */
+  max-width: 60px; /* To prevent too wide */
+}
+
+/* Sticky table headers */
+thead th {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 2;
+  text-align: center;
+}
+
+/* Headers and Totals */
+tfoot, thead {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+/* Team Row (Optional styling for team rows) */
+.team-row {
+  background-color: #006674;
+  font-weight: bold;
+}
+
+.hole-winner-cell {
+  font-weight: bold;
+  color: green;
+}
+
+/* Course Details Tightened Spacing */
+.course-details p, 
+.course-details h3, 
+.course-details label {
+  margin-bottom: 2px;
+  margin-top: 0;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+  th, td {
+    padding: 6px;
+    font-size: 12px;
+  }
+}
+
+/* Specific Player Inputs */
+input.player-input {
+  width: 30%;
+  padding: 5px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+
+  border: 3px solid rgb(75, 75, 75); /* Light gray border */
+  border-radius: 10px; /* ✅ Rounded corners */
+  background-color: #fff; /* White background */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+/* Specific Handicap Inputs */
+input.handicap-input {
+  width: 25%; /* Or smaller like 50% if needed */
+  padding: 5px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+
+  border: 3px solid rgb(255, 255, 255); /* Light gray border */
+  border-radius: 10px; /* ✅ Rounded corners */
+  background-color: #fff; /* White background */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+/* Optional Theme (Golf Green Look) */
+body {
+  background-color: #a5a5a5; /* Light green background */
+}
+
+table {
+  background-color: rgb(255, 255, 255);
+}
+
+thead, tfoot {
+  background-color: #a5d6a7; /* Soft green header/footer */
+}
+
+/* Flexbox for player name & handicap */
+.player-info-row {
+  display: flex;
+  gap: 10px; /* Space between inputs */
+  margin-bottom: 15px; /* Space between rows */
+}
+
+/* Adjust individual input widths */
+.player-info-row input {
+  flex: 1; /* Each input shares space equally */
+  padding: 5px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+/* Team name input */
+.team-input {
+  width: 50%; /* Adjust as needed */
+  padding: 14px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+
+  border: 2px solid rgb(75, 75, 75); /* Light gray border */
+  border-radius: 10px; /* ✅ Rounded corners */
+  background-color: #fff; /* White background */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+.course-input {
+  width: 75%; /* Adjust as needed */
+  padding: 14px;
+  font-size: 18px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+
+  border: 2px solid rgb(75, 75, 75); /* Light gray border */
+  border-radius: 10px; /* ✅ Rounded corners */
+  background-color: #fff; /* White background */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+/* Universal Dropdown Styling */
+select {
+  font-size: 16px; /* Make font readable */
+  padding: 10px 12px; /* Adjust padding for better spacing */
+  width: 100%; /* Make dropdown fill available space */
+  max-width: 300px; /* Optional: prevent it from getting too big */
+  border: 2px solid rgb(255, 255, 255); /* Match your box styling */
+  border-radius: 10px; /* Rounded corners like inputs */
+  background-color: white;
+  color: black; /* Text color */
+  box-sizing: border-box; /* Prevent padding from messing up width */
+  margin-bottom: 10px;
+}
+
+.narrow-column {
+  width: 40px;
+  min-width: 20px;
+  max-width: 60px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.player-column {
+  min-width: 20px;
+  max-width: 50px;
+}
+
+.winner-column {
+  min-width: 10px;
+  max-width: 120px;
+}
+
+.match-status {
+  font-size: 15px;
+  font-weight: bold;
+  color: rgb(75, 75, 75); /* Make it pop */
+  margin: 15px 0;
+  text-align: center;
+}
+
+/* 🎯 Score input boxes */
+.score-input {
+  width: 30px; /* Adjust width as needed */
+  height: 30px; /* Adjust height as needed */
+  padding: 4px; /* Inside spacing */
+  font-size: 14px; /* Text size inside box */
+  text-align: center; /* Center the number */
+  border: 2px solid rgb(73, 73, 73); /* Match other boxes */
+  border-radius: 6px; /* Rounded corners */
+  box-sizing: border-box;
+  background-color: white;
+  color: black;
+
+}
+
+/* Hide number input spinners for cleaner look */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+
+/* Header table and body table to look the same */
+.header-table, .body-table {
+  width: 100%;
+  border-color:#000000;
+  background-color: white; /* Match the rest of the card */
+  border-radius: 5px;
+  overflow: hidden;
+  table-layout: fixed; /* Natural sizing */
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure same padding and borders */
+.header-table th, .body-table td, .body-table th {
+  padding: 2px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 12px;
+  border: 4px solid rgb(0, 0, 0);
+}
+
+/* Keep vertical text in header aligned */
+.header-table th.vertical-text {
+  text-align: center;
+  vertical-align: middle;
+  height: 100px; /* Ensures good height */
+}
+
+.player-total {
+  background-color: #d2d2d2; /* light green highlight */
+  font-weight: bold;
+  font-size: 14px;
+  padding: 4px;
+}
+
+
+.export-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: darkgreen;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 10px 0;
+}
+
+.export-button:hover {
+  background-color: green;
+}
+
+.reset-button {
+  padding: 10px 15px;
+  font-size: 14px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 5px;
+}
+
+.reset-button:hover {
+  background-color: darkred;
+}
+
+.app-logo {
+  width: 300px; /* Adjust as needed */
+  height: auto; /* Maintain aspect ratio */
+  margin: 10px auto; /* Center and add space */
+  display: block; /* Make sure it centers */
+}
+
+.app-header {
+  text-align: center; /* Center everything inside */
+  margin-bottom: 1px; /* Space below the logo */
+}
+
+body {
+  font-family: 'Bubblegum Sans', sans-serif; /* Or 'Roboto', etc. */
+}
+
+h1, h2, h3, h4 {
+  font-weight: 500; /* Bold for headings */
+  text-align: center;
+}
+
+p, td, th, input, button {
+  font-weight: 400; /* Normal weight for body text */
+}
+
+.scorecard-wrapper {
+  width: 100%;
+  overflow: hidden;
+}
+
+.header-table {
+  width: 100%;
+  border: 2px solid black;
+  background-color: rgb(255, 255, 255);
+  table-layout: fixed;
+}
+
+.scrollable-body {
+  max-height: 350px; /* Adjust for your screen size */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.body-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: rgb(255, 255, 255);
+  table-layout: fixed;
+}
+
+.header-table th,
+.body-table td {
+  padding: 5px;
+  font-size: 12px;
+  border: 2px solid rgb(0, 0, 0);
+  text-align: center;
+}
+
+.admin-button {
+  font-size: 10px;
+  padding: 4px 8px;
+  opacity: 0.25;
+  background-color: transparent;
+  color: rgb(104, 104, 104);
+  border: 1px solid rgb(104, 104, 104);
+  border-radius: 6px;
+  position: center;
+  bottom: 10px;
+  right: 10px;
+  z-index: 999;
+}
+
+.admin-button:hover {
+  opacity: 1;
+  background-color: rgb(133, 133, 133);
+  color: white;
+  cursor: pointer;
+}
+
+.stableford-team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 🔁 Force exactly 2 columns */
+  gap: 5px;
+  justify-content: center;
+  margin: 1px auto 1px;
+  max-width: 600px; /* Optional: keeps it tight on large screens */
+}
+
+.team-score-box {
+  border-radius: 10px;
+  padding: 1px;
+  text-align: center;
+  font-weight: bold;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+}
+
+.stableford-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px 0px;
+  margin: 10px auto;
+  font-size: 0.6em;
+  text-align: center;
+  max-width: 300px;
+  color: #3b3b3b;
+}
+
+.hole-image-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.hole-image-modal {
+  background: white;
+  padding: 1rem;
+  border-radius: 10px;
+  max-width: 90%;
+  max-height: 90%;
+  text-align: center;
+}
+
+.hole-image-modal img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 8px;
+}
+
+.housing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px 10px;
+  margin: 10px auto;
+  font-size: 0.6em;
+  text-align: center;
+  max-width: 300px;
+  color: #ffffff;
+}
+
+.player-info-row {
+  display: flex;
+  gap: 0px;
+  margin-bottom: 5px;
+}
+
+.player-name-input {
+  flex: 3; /* 75% */
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid rgb(255, 255, 255);
+  border-radius: 10px;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+}
+
+.player-handicap-input {
+  flex: 1; /* 25% */
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid rgb(255, 255, 255);
+  border-radius: 10px;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+}

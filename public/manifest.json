@@ -1,0 +1,20 @@
+{
+  "name": "Dudez O' Plenty",
+  "short_name": "Dudez",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#006400",
+  "icons": [
+    {
+      "src": "/dudezlogo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/dudezlogo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
