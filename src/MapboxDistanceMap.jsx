@@ -25,6 +25,42 @@ function MapboxDistanceMap() {
     return R * c * 1000;
   };
 
+  let animationMarker;
+let animationFrame;
+
+function animateBall(map, lineCoords) {
+  let progress = 0;
+
+  if (animationMarker) {
+    animationMarker.remove();
+    cancelAnimationFrame(animationFrame);
+  }
+
+  const el = document.createElement('div');
+  el.innerHTML = '⚪'; // You can use '⛳' or style this later
+  el.style.fontSize = '7px';
+
+  animationMarker = new mapboxgl.Marker({ element: el })
+    .setLngLat(lineCoords[0])
+    .addTo(map);
+
+  function step() {
+    progress += 0.01;
+    if (progress > 1) progress = 0;
+
+    const start = lineCoords[0];
+    const end = lineCoords[1];
+    const lng = start[0] + (end[0] - start[0]) * progress;
+    const lat = start[1] + (end[1] - start[1]) * progress;
+
+    animationMarker.setLngLat([lng, lat]);
+    animationFrame = requestAnimationFrame(step);
+  }
+
+  step();
+}
+
+
   useEffect(() => {
     if (map.current) return;
 
@@ -125,22 +161,7 @@ function MapboxDistanceMap() {
         
       });
 
-      let dashOffset = 0;
-
-      //function animateLine() {
-      //  if (!map.current.getLayer('distance-line')) return;
-      
-      //  dashOffset = (dashOffset + 1.0) % 10;
-      
-        // This line simulates the animation by changing dash pattern
-     //   map.current.setPaintProperty('distance-line', 'line-dasharray', [2, 2, dashOffset]);
-      
-     //   requestAnimationFrame(animateLine);
-     // }
-      
-      animateLine();
-      
-
+      animateBall(map.current, lineCoords);
     });
   });
   }, []);
