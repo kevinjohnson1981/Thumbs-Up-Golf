@@ -1,7 +1,7 @@
 /* MapboxMap.css */
 .map-container {
-  height: 600px;
+  height: 400px;
   width: 100%;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
 }

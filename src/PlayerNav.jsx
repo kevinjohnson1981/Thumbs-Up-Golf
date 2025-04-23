@@ -11,10 +11,10 @@ function PlayerNav({ onGoHome, onGoIndividualLeaderboard, onGoTeamLeaderboard, t
       <div style={{ marginBottom: "1px", fontWeight: "bold", fontSize: "1.5em" }}>
         {tournamentName}
       </div>
-      <button onClick={onGoHome} style={{ marginRight: "5px" }}>⛳</button>
-      <button onClick={onGoIndividualLeaderboard} style={{ marginRight: "5px" }}>🥇🏌️‍♂️</button>
-      <button onClick={onGoTeamLeaderboard} style={{ marginRight: "5px" }}>🏆🏌️‍♂️🏌️‍♂️🏌️‍♂️</button>
-      <button onClick={() => setShowMap(true)} style={{ marginRight: "5px" }}>📍 GPS</button>
+      <button onClick={onGoHome} style={{ marginRight: "10px" }}>⛳</button>
+      <button onClick={onGoIndividualLeaderboard} style={{ marginRight: "10px" }}>🥇🏌️‍♂️</button>
+      <button onClick={onGoTeamLeaderboard} style={{ marginRight: "10px" }}>🏆🏌️‍♂️🏌️‍♂️🏌️‍♂️</button>
+      <button onClick={() => setShowMap(true)} style={{ marginRight: "10px" }}>📍 GPS Map</button>
 
       {/* ✅ Simple modal for the map */}
       {showMap && (

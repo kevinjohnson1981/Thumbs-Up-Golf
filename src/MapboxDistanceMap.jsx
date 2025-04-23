@@ -71,8 +71,8 @@ function MapboxDistanceMap() {
 
         // Add new ❌ marker
         const el = document.createElement('div');
-        el.innerHTML = '❌';
-        el.style.fontSize = '30px';
+        el.innerHTML = 'O';
+        el.style.fontSize = '20px';
         el.style.color = 'red';
         el.style.fontWeight = 'bold';
         el.style.textShadow = '0 0 3px white';
@@ -82,8 +82,64 @@ function MapboxDistanceMap() {
           .addTo(map.current);
 
         map.current._clickMarker = redMarker;
+
+      // ➕ Draw a line to the clicked point
+      const lineCoords = [
+        [userLocationRef.current.lng, userLocationRef.current.lat],
+        [lng, lat]
+      ];
+
+      const lineId = 'distance-line';
+
+      if (map.current.getSource(lineId)) {
+        map.current.removeLayer(lineId);
+        map.current.removeSource(lineId);
+      }
+
+      map.current.addSource(lineId, {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: lineCoords
+          }
+        }
       });
+
+      map.current.addLayer({
+        id: lineId,
+        type: 'line',
+        source: lineId,
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round'
+        },
+        paint: {
+          'line-color': 'yellow',
+          'line-width': 3,
+          'line-dasharray': [0, 2000], // creates a dashed line
+        }
+      });
+
+      let dashOffset = 0;
+
+      function animateLine() {
+        if (!map.current.getLayer('distance-line')) return;
+      
+        dashOffset = (dashOffset + 1.0) % 100;
+      
+        // This line simulates the animation by changing dash pattern
+        map.current.setPaintProperty('distance-line', 'line-dasharray', [2, 4, dashOffset]);
+      
+        requestAnimationFrame(animateLine);
+      }
+      
+      animateLine();
+      
+
     });
+  });
   }, []);
 
   return (
