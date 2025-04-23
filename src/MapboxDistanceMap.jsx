@@ -71,7 +71,7 @@ function MapboxDistanceMap() {
 
         // Add new ❌ marker
         const el = document.createElement('div');
-        el.innerHTML = 'O';
+        el.innerHTML = 'o';
         el.style.fontSize = '20px';
         el.style.color = 'red';
         el.style.fontWeight = 'bold';
@@ -116,24 +116,27 @@ function MapboxDistanceMap() {
           'line-join': 'round'
         },
         paint: {
-          'line-color': 'yellow',
-          'line-width': 3,
-          'line-dasharray': [0, 2000], // creates a dashed line
+          'line-color': 'red',     // Bright neon cyan laser
+          'line-width': 5,             // Thicker beam
+          'line-blur': 3,              // Glow effect
+          'line-opacity': 1.0,         // Slight transparency
+          
         }
+        
       });
 
       let dashOffset = 0;
 
-      function animateLine() {
-        if (!map.current.getLayer('distance-line')) return;
+      //function animateLine() {
+      //  if (!map.current.getLayer('distance-line')) return;
       
-        dashOffset = (dashOffset + 1.0) % 100;
+      //  dashOffset = (dashOffset + 1.0) % 10;
       
         // This line simulates the animation by changing dash pattern
-        map.current.setPaintProperty('distance-line', 'line-dasharray', [2, 4, dashOffset]);
+     //   map.current.setPaintProperty('distance-line', 'line-dasharray', [2, 2, dashOffset]);
       
-        requestAnimationFrame(animateLine);
-      }
+     //   requestAnimationFrame(animateLine);
+     // }
       
       animateLine();
       
