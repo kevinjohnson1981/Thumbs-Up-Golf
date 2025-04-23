@@ -40,9 +40,12 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
       );
     } else if (matchObj.type === "stableford") {
       players = matchObj.participants?.map(name => ({ name }));
-    } else if (matchObj.type === "teamMatch9" || matchObj.type === "teamMatchFront9" || matchObj.type === "teamMatchBack9") {
-      players = [...(matchObj.players0 || []), ...(matchObj.players1 || [])].map(name => ({ name }));
+    } else if (matchObj.type === "teamMatch9") {
+      const team0Players = matchObj.participants?.team0?.players || [];
+      const team1Players = matchObj.participants?.team1?.players || [];
+      players = [...team0Players, ...team1Players].map(name => ({ name }));
     }
+    
   
     onSelectMatchType(matchObj.type, players, matchObj); // pass the matchObj too
   };
@@ -131,12 +134,12 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
               </div>
             )}
 
-            {(match.type === "teamMatchFront9" || match.type === "teamMatchBack9") &&
-              uniquePlayersForTeamMatch9s.length > 0 && (
-                <div>
-                  {uniquePlayersForTeamMatch9s.join(", ")}
-                </div>
+            {match.type === "teamMatch9" && match.participants && (
+              <div>
+                {(match.participants.team0?.players || []).join(", ")} vs {(match.participants.team1?.players || []).join(", ")}
+              </div>
             )}
+
 
             {match.type === "individualMatch18" && individualMatch18Players.length > 0 && (
               <div>

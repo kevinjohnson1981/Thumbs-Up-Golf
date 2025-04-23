@@ -135,6 +135,14 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
           }
         };
       }
+
+      if (match.type === "teamMatch9") {
+        return {
+          matchLabel: match.matchLabel,
+          type: match.type,
+          participants: match.participants || {}
+        };
+      }
     
       // Leave other match types as-is
       return match;
@@ -344,19 +352,70 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
 
         {/* Player checkboxes */}
         {teams.find(t => t.name === match.participants?.[`team${teamIndex + 1}`]?.teamName)?.players.map((p, pIndex) => (
-          <label key={pIndex} style={{ display: 'block', marginLeft: '20px' }}>
+          <label key={pIndex} className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={match.participants?.[`team${teamIndex + 1}`]?.players.includes(p.name)}
+            onChange={(e) => {
+              const updated = [...matchSetups];
+              const selected = updated[index].participants[`team${teamIndex + 1}`]?.players || [];
+              const name = p.name;
+        
+              if (e.target.checked && selected.length < 2) {
+                updated[index].participants[`team${teamIndex + 1}`].players = [...selected, name];
+              } else {
+                updated[index].participants[`team${teamIndex + 1}`].players = selected.filter(n => n !== name);
+              }
+              setMatchSetups(updated);
+            }}
+          />
+          {p.name}
+        </label>
+        
+        ))}
+      </div>
+    ))}
+  </>
+)}
+{match.type === "teamMatch9" && (
+  <>
+    {[0, 1].map((teamIndex) => (
+      <div key={teamIndex}>
+        <label>{`Team ${teamIndex + 1}:`}</label>
+        <select
+          value={match.participants?.[`team${teamIndex}`]?.teamName || ""}
+          onChange={(e) => {
+            const updated = [...matchSetups];
+            const teamName = e.target.value;
+            if (!updated[index].participants) updated[index].participants = {};
+            updated[index].participants[`team${teamIndex}`] = {
+              teamName,
+              players: []
+            };
+            setMatchSetups(updated);
+          }}
+        >
+          <option value="">Select Team</option>
+          {teams.map((t) => (
+            <option key={t.name} value={t.name}>{t.name}</option>
+          ))}
+        </select>
+
+        {/* Player checkboxes */}
+        {teams.find(t => t.name === match.participants?.[`team${teamIndex}`]?.teamName)?.players.map((p, pIndex) => (
+          <label key={pIndex} className="checkbox-label">
             <input
               type="checkbox"
-              checked={match.participants?.[`team${teamIndex + 1}`]?.players.includes(p.name)}
+              checked={match.participants?.[`team${teamIndex}`]?.players.includes(p.name)}
               onChange={(e) => {
                 const updated = [...matchSetups];
-                const selected = updated[index].participants[`team${teamIndex + 1}`]?.players || [];
+                const selected = updated[index].participants[`team${teamIndex}`]?.players || [];
                 const name = p.name;
 
                 if (e.target.checked && selected.length < 2) {
-                  updated[index].participants[`team${teamIndex + 1}`].players = [...selected, name];
+                  updated[index].participants[`team${teamIndex}`].players = [...selected, name];
                 } else {
-                  updated[index].participants[`team${teamIndex + 1}`].players = selected.filter(n => n !== name);
+                  updated[index].participants[`team${teamIndex}`].players = selected.filter(n => n !== name);
                 }
                 setMatchSetups(updated);
               }}
@@ -368,111 +427,8 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
     ))}
   </>
 )}
-{match.type === "teamMatch9" && (
-  <>
-    <h4>Front 9 Match</h4>
-    {[0, 1].map((teamIndex) => (
-      <div key={`front9-${teamIndex}`}>
-        <label>Team {teamIndex + 1}:</label>
-        <select
-          value={match.front9?.[`team${teamIndex}`] || ""}
-          onChange={(e) => {
-            const updated = [...matchSetups];
-            if (!updated[index].front9) updated[index].front9 = {};
-            updated[index].front9[`team${teamIndex}`] = e.target.value;
-            setMatchSetups(updated);
-          }}
-        >
-          <option value="">Select Team</option>
-          {teams.map((team, idx) => (
-            <option key={idx} value={team.name}>{team.name}</option>
-          ))}
-        </select>
-        {teams.find(t => t.name === match.front9?.[`team${teamIndex}`])?.players.map((player, pIndex) => (
-  <label key={`front9-${teamIndex}-player-${pIndex}`} style={{ display: 'block', marginLeft: '20px' }}>
-    <input
-      type="checkbox"
-      checked={match.front9?.[`players${teamIndex}`]?.includes(player.name) || false}
-      onChange={(e) => {
-        const updated = [...matchSetups];
-        if (!updated[index].front9) updated[index].front9 = {};
-        if (!updated[index].front9[`players${teamIndex}`]) {
-          updated[index].front9[`players${teamIndex}`] = [];
-        }
 
-        const selectedPlayers = updated[index].front9[`players${teamIndex}`];
 
-        if (e.target.checked) {
-          if (selectedPlayers.length < 2) {
-            selectedPlayers.push(player.name);
-          }
-        } else {
-          const i = selectedPlayers.indexOf(player.name);
-          if (i !== -1) selectedPlayers.splice(i, 1);
-        }
-
-        setMatchSetups(updated);
-      }}
-    />
-    {player.name}
-  </label>
-))}
-
-      </div>
-    ))}
-
-    <h4>Back 9 Match</h4>
-    {[0, 1].map((teamIndex) => (
-      <div key={`back9-${teamIndex}`}>
-        <label>Team {teamIndex + 1}:</label>
-        <select
-          value={match.back9?.[`team${teamIndex}`] || ""}
-          onChange={(e) => {
-            const updated = [...matchSetups];
-            if (!updated[index].back9) updated[index].back9 = {};
-            updated[index].back9[`team${teamIndex}`] = e.target.value;
-            setMatchSetups(updated);
-          }}
-        >
-          <option value="">Select Team</option>
-          {teams.map((team, idx) => (
-            <option key={idx} value={team.name}>{team.name}</option>
-          ))}
-        </select>
-        {teams.find(t => t.name === match.front9?.[`team${teamIndex}`])?.players.map((player, pIndex) => (
-  <label key={`front9-${teamIndex}-player-${pIndex}`} style={{ display: 'block', marginLeft: '20px' }}>
-    <input
-      type="checkbox"
-      checked={match.front9?.[`players${teamIndex}`]?.includes(player.name) || false}
-      onChange={(e) => {
-        const updated = [...matchSetups];
-        if (!updated[index].front9) updated[index].front9 = {};
-        if (!updated[index].front9[`players${teamIndex}`]) {
-          updated[index].front9[`players${teamIndex}`] = [];
-        }
-
-        const selectedPlayers = updated[index].front9[`players${teamIndex}`];
-
-        if (e.target.checked) {
-          if (selectedPlayers.length < 2) {
-            selectedPlayers.push(player.name);
-          }
-        } else {
-          const i = selectedPlayers.indexOf(player.name);
-          if (i !== -1) selectedPlayers.splice(i, 1);
-        }
-
-        setMatchSetups(updated);
-      }}
-    />
-    {player.name}
-  </label>
-))}
-
-      </div>
-    ))}
-  </>
-)}
 {match.type === "individualMatch18" && (
   <div>
     <h4>Pairings (18 Holes):</h4>
@@ -545,7 +501,7 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
 
         {/* SELECT 2 PLAYERS FROM THIS TEAM */}
         {teams.find(t => t.name === match[`team${teamIndex}`])?.players.map((p, pIndex) => (
-          <label key={pIndex} style={{ display: 'block', marginLeft: '20px' }}>
+          <label key={pIndex} className="checkbox-label">
             <input
               type="checkbox"
               checked={match.players?.[`team${teamIndex}`]?.includes(p.name) || false}
@@ -578,8 +534,8 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
       team.players.map((player, idx) => {
         const isChecked = match.participants?.[player.name] ?? false;
         return (
-          <div key={`${team.name}-${idx}`} style={{ marginLeft: "20px" }}>
-            <label>
+          <div key={`${team.name}-${idx}`} style={{ marginLeft: "1px" }}>
+            <label className="checkbox-label">
               <input
                 type="checkbox"
                 checked={isChecked}
@@ -608,7 +564,7 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
       <div key={teamIndex}>
         <strong>{team.name}</strong>
         {team.players.map((player, pIndex) => (
-          <label key={pIndex} style={{ display: 'block', marginLeft: '20px' }}>
+          <label key={pIndex} className="checkbox-label">
             <input
               type="checkbox"
               checked={match.participants?.includes(player.name)}

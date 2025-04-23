@@ -182,49 +182,35 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       setLocalPlayers(allPlayers);
     }
 
-    if (matchType === "teamMatchFront9" || matchType === "teamMatchBack9" || matchType === "teamMatch9") {
-      const matchHalf =
-        matchType === "teamMatchFront9"
-          ? selectedMatch.front9
-          : matchType === "teamMatchBack9"
-          ? selectedMatch.back9
-          : selectedMatch.front9; // Default to front9 for generic teamMatch9
-
-          console.log("🔍 matchHalf for teamMatch9:", matchHalf);
-
-
+    if (matchType === "teamMatch9") {
+      const team0 = selectedMatch.participants?.team0;
+      const team1 = selectedMatch.participants?.team1;
     
-      if (!matchHalf?.team0 || !matchHalf?.team1) {
-        console.warn("⚠️ One or both teams missing for teamMatch9 format.");
+      if (!team0 || !team1) {
+        console.warn("⚠️ One or both teams missing in teamMatch9 participants.");
         return;
       }
     
-      const team1Name = matchHalf.team0;
-      const team2Name = matchHalf.team1;
-
-      const team1Players = matchHalf.players0 || [];
-      const team2Players = matchHalf.players1 || [];
-
-      const allPlayers = [...team1Players, ...team2Players].map((playerName) => {
-        const teamName = team1Players.includes(playerName) ? team1Name : team2Name;
+      const allPlayers = [...(team0.players || []), ...(team1.players || [])].map((playerName) => {
+        const teamName = team0.players.includes(playerName) ? team0.teamName : team1.teamName;
         const teamObj = matchData.teams.find((t) => t.name === teamName);
         const playerObj = teamObj?.players.find((p) => p.name === playerName);
-
+    
         return {
           name: playerName,
           handicap: parseInt(playerObj?.handicap || 0),
           teamName: teamName,
-          teamColor: teamObj?.color || "gray"  // 👈 grab the color from the team
+          teamColor: teamObj?.color || "gray"
         };
       });
-
+    
       setLocalPlayers(allPlayers);
       setTeamPlayers({
-        team1: team1Players,
-        team2: team2Players
+        team1: team0.players,
+        team2: team1.players
       });
-
     }
+    
     
     
   
