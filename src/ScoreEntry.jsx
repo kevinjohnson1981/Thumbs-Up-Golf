@@ -265,6 +265,29 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
       setLocalPlayers(allPlayers);
     }
+
+    if (matchType === "individualMatch18") {
+      const pairings = selectedMatch.pairings || [];
+    
+      const orderedPlayers = pairings.flatMap(pair => [pair.playerA, pair.playerB]);
+    
+      const allPlayers = orderedPlayers.map((name) => {
+        const teamObj = matchData.teams.find((t) =>
+          t.players.some((p) => p.name === name)
+        );
+        const playerObj = teamObj?.players.find((p) => p.name === name);
+    
+        return {
+          name,
+          handicap: parseInt(playerObj?.handicap || 0),
+          teamName: teamObj?.name || "",
+          teamColor: teamObj?.color || "gray"
+        };
+      });
+    
+      setLocalPlayers(allPlayers);
+    }
+    
     
     
   }, [selectedMatch, matchData, matchType]);
