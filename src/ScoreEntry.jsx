@@ -498,13 +498,13 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   
       const diff = net - hole.par;
   
-      if (diff >= 2) return points - 1;
-      if (diff === 1) return points + 0;
-      if (diff === 0) return points + 0.5;
-      if (diff === -1) return points + 1;
-      if (diff === -2) return points + 2;
+      if (diff >= 2) return points + 0;
+      if (diff === 1) return points + 0.5;
+      if (diff === 0) return points + 1;
+      if (diff === -1) return points + 2;
+      if (diff === -2) return points + 3;
       if (diff === -3) return points + 3;
-      if (diff <= -4) return points + 4;
+      if (diff <= -4) return points + 3;
   
       return points;
     }, 0);
@@ -948,9 +948,9 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
 
       {matchType === "stableford" && (
         <div className="stableford-breakdown-grid">
-          <div><strong>+2 = -1</strong> / +1 = 0</div>
-          <div><strong>E = +0.5</strong> / -1 = +1</div>
-          <div><strong>-2 = +2</strong> / -3 = +3</div>
+          <div><strong>+2 = 0</strong> / +1 = +0.5</div>
+          <div><strong>E = +1</strong> / -1 = +2</div>
+          <div><strong>-2 = +3</strong> / -3 = +3</div>
           <div><strong>0.5–6 pts:</strong> 0.5 team point</div>
           <div><strong>6.5–9 pts:</strong> 1 team point</div>
           <div><strong>9.5–12 pts:</strong> 1.5 team point</div>
