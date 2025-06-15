@@ -15,25 +15,48 @@ function IndividualLeaderboard({ selectedTournamentId }) {
     const fetchLeaderboardData = async () => {
       const scoreSnapshots = await getDocs(collection(db, "tournaments", selectedTournamentId, "scores"));
       const allScores = [];
-  
+    
       for (const docSnap of scoreSnapshots.docs) {
         const data = docSnap.data();
         const matchId = docSnap.id;
-        const [_, date, matchType] = matchId.split("_");
-  
-        // Fetch the corresponding match doc to get hole pars
-        const matchSnap = await getDocs(
-          query(collection(db, "tournaments", selectedTournamentId, "matches"), where("date", "==", date))
-        );
-        const matchDoc = matchSnap.docs[0]?.data();
+        const [_, date, matchType, matchLabel] = matchId.split("_");
+    
+        // 🧠 Find the corresponding match doc
+        const matchesSnap = await getDocs(collection(db, "tournaments", selectedTournamentId, "matches"));
+        const matchingMatch = matchesSnap.docs.find((doc) => {
+          const match = doc.data();
+          const matchInfo = match.matches?.[0]; // 👈 pull from matches array
+          if (!matchInfo) return false;
+        
+          const label = matchInfo.matchLabel?.replace(/\s+/g, "_") || "Match";
+          const composedId = `scores_${match.date}_${matchInfo.type}_${label}`;
+          return composedId === docSnap.id;
+        });
+        
+    
+        const matchDoc = matchingMatch?.data();
+        const firstMatch = matchDoc?.matches?.[0];
+        if (firstMatch?.excludeFromIndividual === true) continue; // ✅ FINAL CHECK
+
+
+    
+        // ✅ Skip this match if admin excluded it
+        if (matchDoc?.excludeFromIndividual === true) continue;
+    
         const holePars = matchDoc?.teeBox?.holes?.map(h => h.par) || [];
         const totalPar = holePars.reduce((sum, par) => sum + par, 0);
         const totalParByHole = {};
-          holePars.forEach((par, idx) => {
-            totalParByHole[idx] = par;
-          });
-
-          allScores.push({ date, matchType, totalPar, totalParByHole, scores: data.scores });
+        holePars.forEach((par, idx) => {
+          totalParByHole[idx] = par;
+        });
+    
+        allScores.push({
+          date,
+          matchType,
+          totalPar,
+          totalParByHole,
+          scores: data.scores
+        });
       }
   
       const playerTotals = {};
@@ -135,10 +158,11 @@ function IndividualLeaderboard({ selectedTournamentId }) {
                   <td key={date}>
                     {score
                       ? `${score.gross} / ${score.net} (${score.netToPar > 0 ? "+" : ""}${score.netToPar})`
-                      : "-"}
+                      : ""}
                   </td>
                 );
               })}
+
               <td>
                 ({player.totalToPar > 0 ? "+" : ""}{player.totalToPar})
               </td>

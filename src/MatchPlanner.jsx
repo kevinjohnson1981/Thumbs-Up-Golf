@@ -30,6 +30,7 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
     }
   };
   const [editingMatchId, setEditingMatchId] = useState(null);
+  const [excludeFromIndividual, setExcludeFromIndividual] = useState(false);
 
 
   
@@ -164,7 +165,10 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
         holes: holesWithNumbers
       },
       teams,
-      matches: transformedMatches
+      matches: matchSetups.map(match => ({
+        ...match,
+        ...(match.excludeFromIndividual ? { excludeFromIndividual: true } : {})
+      }))      
     };
     
     
@@ -289,6 +293,22 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
   <div key={index} style={{ border: '1px solid #aaa', padding: '10px', marginBottom: '1rem' }}>
     <h3>{match.matchLabel}</h3>
     <label>Match Type:</label>
+
+    <div style={{ marginTop: "0.5rem" }}>
+      <label>
+        <input
+          type="checkbox"
+          checked={match.excludeFromIndividual || false}
+          onChange={(e) => {
+            const updated = [...matchSetups];
+            updated[index].excludeFromIndividual = e.target.checked;
+            setMatchSetups(updated);
+          }}
+        />
+        Exclude this match from the individual leaderboard
+      </label>
+    </div>
+
     <button
       style={{ float: "right", color: "red" }}
       onClick={() => {
