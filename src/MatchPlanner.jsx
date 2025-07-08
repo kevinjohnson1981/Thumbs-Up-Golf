@@ -97,89 +97,128 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
     setHoles(selectedTee.holes); // ✅ Store hole data
     console.log("Holes loaded successfully:", selectedTee.holes);
   };
+
+  // remove every key whose value is undefined OR an array element that is undefined
+const deepClean = (obj) => {
+  if (Array.isArray(obj)) {
+    return obj
+      .map(deepClean)
+      .filter((v) => v !== undefined);        // drop undefined array items
+  }
+  if (obj !== null && typeof obj === "object") {
+    const cleaned = {};
+    Object.entries(obj).forEach(([k, v]) => {
+      const cv = deepClean(v);
+      if (cv !== undefined) cleaned[k] = cv;  // keep only defined values
+    });
+    return cleaned;
+  }
+  return obj;                                // primitives
+};
+
   
   
 
   const addDayToFirebase = async () => {
     if (!selectedDateLocal || !selectedCourse || !selectedTeeBox) {
-      alert("Please select a date, course, and tee box and at least one match before adding a day!");
+      alert("Please select a date, course, tee box and at least one match.");
       return;
     }
-     
-    // ✅ Generate a readable document name based on date
-    const timestamp = new Date().getTime();
-    const docId = editingMatchId || `match_${selectedDateLocal}_${new Date().getTime()}`;
 
-    // 🛠 Add hole numbers to each hole object
-    const holesWithNumbers = holes.map((hole, index) => ({
-      ...hole,
-      hole: index + 1  // 1 through 18
-    }));
+    // after the initial tee / date / course checks
+    for (const m of matchSetups) {
+      if (m.type === "individualMatch9") {
+        const a = m.players?.team0 || [];
+        const b = m.players?.team1 || [];
+        if (a.length !== 2 || b.length !== 2) {
+          alert(`${m.matchLabel}: please choose TWO players on each team.`);
+          return;
+        }
+      }
+    }
+
   
+    const docId = editingMatchId || `match_${selectedDateLocal}_${Date.now()}`;
+  
+    // add hole numbers 1-18
+    const holesWithNumbers = holes.map((h, i) => ({ ...h, hole: i + 1 }));
+  
+    /* ---------- 1.  Build matches exactly as we want them in Firestore ---------- */
     const transformedMatches = matchSetups.map((match) => {
+      // ── Individual match play 9 holes ──────────────────────────────────────────
       if (match.type === "individualMatch9") {
-        const teamAPlayers = match.players?.team0 || [];
-        const teamBPlayers = match.players?.team1 || [];
-    
+        const team0 = match.players?.team0 || [];
+        const team1 = match.players?.team1 || [];
+  
         return {
           matchLabel: match.matchLabel,
-          type: match.type,
-          pairings: {
-            front9: [
-              { playerA: teamAPlayers[0], playerB: teamBPlayers[0] },
-              { playerA: teamAPlayers[1], playerB: teamBPlayers[1] }
+          type      : "individualMatch9",
+          participants: {                                 // keep original teams
+            team0: { teamName: match.team0, players: team0 },
+            team1: { teamName: match.team1, players: team1 }
+          },
+          pairings : {
+            front9 : [
+              { playerA: team0[0], playerB: team1[0] },
+              { playerA: team0[1], playerB: team1[1] },
             ],
-            back9: [
-              { playerA: teamAPlayers[0], playerB: teamBPlayers[1] },
-              { playerA: teamAPlayers[1], playerB: teamBPlayers[0] }
+            back9  : [
+              { playerA: team0[0], playerB: team1[1] },
+              { playerA: team0[1], playerB: team1[0] },
             ]
-          }
+          },
+          ...(match.excludeFromIndividual ? { excludeFromIndividual: true } : {})
         };
       }
-
+  
+      // ── Team match play 9 holes ────────────────────────────────────────────────
       if (match.type === "teamMatch9") {
         return {
-          matchLabel: match.matchLabel,
-          type: match.type,
-          participants: match.participants || {}
+          matchLabel  : match.matchLabel,
+          type        : "teamMatch9",
+          participants: match.participants || {},
+          ...(match.excludeFromIndividual ? { excludeFromIndividual: true } : {})
         };
       }
-    
-      // Leave other match types as-is
-      return match;
-    });
-    
-
-    // ✅ Structure match data, including full tee box and hole info
-    const newDay = {
-      tournamentId,  // ✅ this links it to the right tournament!
-      date: selectedDateLocal,
-      course: {
-        id: selectedCourse.id,
-        course_name: selectedCourse.course_name,
-        location: selectedCourse.location
-      },
-      teeBox: {
-        tee_name: selectedTeeBox.tee_name,
-        total_yards: selectedTeeBox.total_yards,
-        holes: holesWithNumbers
-      },
-      teams,
-      matches: matchSetups.map(match => ({
+  
+      // ── everything else: copy as-is and merge the flag ─────────────────────────
+      return {
         ...match,
         ...(match.excludeFromIndividual ? { excludeFromIndividual: true } : {})
-      }))      
+      };
+    });
+  
+    /* ---------- 2.  Assemble the “day” document ------------------------------- */
+    const newDay = {
+      tournamentId,
+      date: selectedDateLocal,
+      course: {
+        id          : selectedCourse.id,
+        course_name : selectedCourse.course_name,
+        location    : selectedCourse.location
+      },
+      teeBox: {
+        tee_name    : selectedTeeBox.tee_name,
+        total_yards : selectedTeeBox.total_yards,
+        holes       : holesWithNumbers
+      },
+      teams,
+      matches: transformedMatches                     // ← save the transformed list
     };
-    
-    
   
-    try {
-      const matchDocRef = doc(db, "tournaments", tournamentId, "matches", docId);
-      await setDoc(matchDocRef, newDay);
+  /* ---------- 3.  Clean & write to Firestore ------------------------------- */
+  try {
+    const cleanDay = deepClean(newDay);            // ✨  strip undefineds
+    console.log("About to save day doc:", cleanDay);
 
-      console.log(`Match Day Added! ID: ${docId}`, newDay);
+    await setDoc(
+      doc(db, "tournaments", tournamentId, "matches", docId),
+      cleanDay
+    );
+
+    console.log(`Match day saved: ${docId}`);
   
-      // ✅ Clear selections after saving
+      // reset local ui state
       setSelectedDate("");
       setSelectedDateLocal("");
       setSelectedCourse(null);
@@ -187,10 +226,11 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
       setHoles([]);
       setMatchSetups([{ matchLabel: "Match 1", type: "" }]);
       setEditingMatchId(null);
-    } catch (error) {
-      console.error("Error adding match day:", error);
+    } catch (err) {
+      console.error("Error adding match day:", err);
     }
   };
+  
 
    console.log("MatchPlanner - Teams State:", teams);
 

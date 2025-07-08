@@ -31,6 +31,13 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
     fetchMatch();
   }, [selectedDate, tournamentId]);
 
+  const normalisePairings = (pairings) => {
+    if (!pairings) return [];
+    if (Array.isArray(pairings)) return pairings;
+    return Object.values(pairings).flat(); // turns { front9: [...], back9: [...] } into one flat array
+  };
+  
+
   const handleSelect = (matchObj) => {
     let players = [];
   
@@ -95,7 +102,9 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
               ...new Set([...front9Combined, ...back9Combined])
             ];
 
-            const individualMatch18Players = match.pairings?.map(pair => [pair.playerA, pair.playerB]).flat() || [];
+            const individualMatch18Players =
+              normalisePairings(match.pairings).flatMap(pair => [pair.playerA, pair.playerB]);
+
 
             const bestBallPlayers = match.matchTeams?.flatMap(team => team.players) || [];
 
