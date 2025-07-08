@@ -656,30 +656,38 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       
 
       if (matchType === "teamMatch9") {
-        const holesToCheck = visibleHalf === "front"
-          ? [...Array(9).keys()]
-          : [...Array(9).keys()].map(i => i + 9);
-      
-        const result = getTeamScore(teamPlayers.team1, teamPlayers.team2, holesToCheck);
-      
-        const teamNames = [
-          matchData.teams.find(team =>
-            team.players.some(p => p.name === teamPlayers.team1[0])
-          )?.name || "Team A",
-          matchData.teams.find(team =>
-            team.players.some(p => p.name === teamPlayers.team2[0])
-          )?.name || "Team B",
-        ];
-      
-        teamPoints = {
-          [teamNames[0]]: {
-            total: result?.team1 ?? "-"
-          },
-          [teamNames[1]]: {
-            total: result?.team2 ?? "-"
+            // compute BOTH nines every time
+            const front9 = getTeamScore(
+              teamPlayers.team1,
+              teamPlayers.team2,
+              [...Array(9).keys()]            // 0-8
+            );
+            const back9  = getTeamScore(
+              teamPlayers.team1,
+              teamPlayers.team2,
+              [...Array(9).keys()].map(i => i + 9) // 9-17
+            );
+        
+            const teamNames = [
+              matchData.teams.find(t =>
+                t.players.some(p => p.name === teamPlayers.team1[0])
+              )?.name || "Team A",
+              matchData.teams.find(t =>
+                t.players.some(p => p.name === teamPlayers.team2[0])
+              )?.name || "Team B",
+            ];
+        
+            teamPoints = {
+              [teamNames[0]]: {
+                front9: front9?.team1 ?? "-",
+                back9:  back9?.team1  ?? "-"
+              },
+              [teamNames[1]]: {
+                front9: front9?.team2 ?? "-",
+                back9:  back9?.team2  ?? "-"
+              }
+            };
           }
-        };
-      }
 
       if (matchType === "teamMatchFront9" || matchType === "teamMatchBack9") {
         const holesToCheck =
