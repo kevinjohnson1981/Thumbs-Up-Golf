@@ -13,112 +13,102 @@ function IndividualLeaderboard({ selectedTournamentId }) {
     if (!selectedTournamentId) return;
 
     const fetchLeaderboardData = async () => {
-      const scoreSnapshots = await getDocs(collection(db, "tournaments", selectedTournamentId, "scores"));
+      // 1️⃣  pull every score-file once
+      const scoreSnaps = await getDocs(
+        collection(db, "tournaments", selectedTournamentId, "scores")
+      );
+  
+      // 2️⃣  pull every “day” document once (each can contain several matches)
+      const daySnaps = await getDocs(
+        collection(db, "tournaments", selectedTournamentId, "matches")
+      );
+  
       const allScores = [];
-    
-      for (const docSnap of scoreSnapshots.docs) {
-        const data = docSnap.data();
-        const matchId = docSnap.id;
-        const [_, date, matchType, matchLabel] = matchId.split("_");
-    
-        // 🧠 Find the corresponding match doc
-        const matchesSnap = await getDocs(collection(db, "tournaments", selectedTournamentId, "matches"));
-        const matchingMatch = matchesSnap.docs.find((doc) => {
-          const match = doc.data();
-          const matchInfo = match.matches?.[0]; // 👈 pull from matches array
-          if (!matchInfo) return false;
-        
-          const label = matchInfo.matchLabel?.replace(/\s+/g, "_") || "Match";
-          const composedId = `scores_${match.date}_${matchInfo.type}_${label}`;
-          return composedId === docSnap.id;
+  
+      // 3️⃣  for each score-file, find the day & match that produced it
+      for (const scoreDoc of scoreSnaps.docs) {
+        const scoreData = scoreDoc.data();            // { scores:{…}, … }
+        const scoreId   = scoreDoc.id;                // scores_2025-06-14_teamMatch9_Match_2
+        let   dayDoc    = null;                       // full day document
+        let   thisMatch = null;                       // the exact match object
+  
+        daySnaps.docs.forEach(d => {
+          const day = d.data();
+          (day.matches || []).forEach(m => {
+            const lbl = (m.matchLabel || "Match").replace(/\s+/g, "_");
+            const cid = `scores_${day.date}_${m.type}_${lbl}`;
+            if (cid === scoreId) {
+              dayDoc    = day;
+              thisMatch = m;
+            }
+          });
         });
-        
-    
-        const matchDoc = matchingMatch?.data();
-        const firstMatch = matchDoc?.matches?.[0];
-        if (firstMatch?.excludeFromIndividual === true) continue; // ✅ FINAL CHECK
-
-
-    
-        // ✅ Skip this match if admin excluded it
-        if (matchDoc?.excludeFromIndividual === true) continue;
-    
-        const holePars = matchDoc?.teeBox?.holes?.map(h => h.par) || [];
-        const totalPar = holePars.reduce((sum, par) => sum + par, 0);
+  
+        if (!dayDoc || !thisMatch) continue;            // couldn’t match → skip
+        if (thisMatch.excludeFromIndividual) continue;  // admin ticked the box
+  
+        // hole-par lookup for this tee-box
+        const holePars       = dayDoc.teeBox?.holes?.map(h => h.par) || [];
         const totalParByHole = {};
-        holePars.forEach((par, idx) => {
-          totalParByHole[idx] = par;
-        });
-    
+        holePars.forEach((par, idx) => (totalParByHole[idx] = par));
+  
+        const [ , date ] = scoreId.split("_");          // 2nd token is the date
+  
         allScores.push({
           date,
-          matchType,
-          totalPar,
-          totalParByHole,
-          scores: data.scores
+          scores: scoreData.scores,
+          totalParByHole
         });
       }
   
+      // 4️⃣  aggregate per player
       const playerTotals = {};
   
-      allScores.forEach(scoreDoc => {
-        const { scores, totalPar, date } = scoreDoc;
+      allScores.forEach(({ scores, date, totalParByHole }) => {
         if (!scores) return;
   
         Object.entries(scores).forEach(([playerName, holeScores]) => {
           if (!playerTotals[playerName]) {
             const teamName = holeScores.teamName || null;
-            playerTotals[playerName] = {
-              name: playerName,
-              team: teamName,
-              days: {},
-            };
+            playerTotals[playerName] = { name: playerName, team: teamName, days: {} };
           }
   
-          const playedHoles = Object.entries(holeScores).filter(
-            ([_, value]) => typeof value === "object" && value !== null && !isNaN(parseInt(value.net))
-          );
-          
-          let totalParPlayed = 0;
-          let gross = 0;
-          let net = 0;
-          
-          playedHoles.forEach(([holeIdx, value]) => {
-            const idx = parseInt(holeIdx);
-            const grossScore = parseInt(value.gross);
-            const netScore = parseInt(value.net);
-            if (!isNaN(grossScore)) gross += grossScore;
-            if (!isNaN(netScore)) net += netScore;
-          
-            // Add hole par from matchDoc if available
-            const holePar = scoreDoc.totalParByHole?.[idx];
-            if (!isNaN(holePar)) totalParPlayed += holePar;
+          let gross = 0,
+              net   = 0,
+              parPlayed = 0;
+  
+          Object.entries(holeScores).forEach(([hIdx, v]) => {
+            if (typeof v !== "object") return;           // skip teamName entry
+            const g = parseInt(v.gross);
+            const n = parseInt(v.net);
+            if (!isNaN(g)) gross += g;
+            if (!isNaN(n)) net   += n;
+  
+            const hp = totalParByHole[hIdx];
+            if (!isNaN(hp)) parPlayed += hp;
           });
-          
-          // Calculate net-to-par based on actual par for played holes
-          const netToPar = totalParPlayed > 0 ? net - totalParPlayed : null;
-          
-          playerTotals[playerName].days[date] = {
-            gross,
-            net,
-            netToPar
-          };
+  
+          const netToPar = parPlayed > 0 ? net - parPlayed : null;
+  
+          playerTotals[playerName].days[date] = { gross, net, netToPar };
         });
       });
   
-      const formatted = Object.values(playerTotals).map(player => {
-        const totalToPar = Object.values(player.days).reduce((sum, d) => sum + d.netToPar, 0);
-        return {
-          name: player.name,
-          team: player.team,
-          scoresByDay: player.days,
-          totalToPar
-        };
-      }).sort((a, b) => a.totalToPar - b.totalToPar);
+          // 5️⃣  format & sort  (REPLACE this block)
+    const leaderboard = Object.values(playerTotals)
+    .map(p => ({
+      name: p.name,
+      team: p.team,
+      scoresByDay: p.days,           // 👈 keep the old key!
+      totalToPar: Object.values(p.days).reduce((s, d) => s + d.netToPar, 0)
+    }))
+    .sort((a, b) => a.totalToPar - b.totalToPar);
+
   
-      setLeaderboardData(formatted);
+      setLeaderboardData(leaderboard);
       setLoading(false);
     };
+  
   
     fetchLeaderboardData();
   }, []);
