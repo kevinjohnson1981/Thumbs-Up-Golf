@@ -116,7 +116,15 @@ const deepClean = (obj) => {
   return obj;                                // primitives
 };
 
-  
+  // ──────────────────────────────────────────────
+// Helper: replace one match object in matchSetups
+// ──────────────────────────────────────────────
+const updateMatchSetup = (idx, newMatch) => {
+  setMatchSetups(prev =>
+    prev.map((m, i) => (i === idx ? newMatch : m))
+  );
+};
+
   
 
   const addDayToFirebase = async () => {
@@ -128,14 +136,20 @@ const deepClean = (obj) => {
     // after the initial tee / date / course checks
     for (const m of matchSetups) {
       if (m.type === "individualMatch9") {
-        const a = m.players?.team0 || [];
-        const b = m.players?.team1 || [];
-        if (a.length !== 2 || b.length !== 2) {
-          alert(`${m.matchLabel}: please choose TWO players on each team.`);
-          return;
+        // ensure BOTH halves have ≥1 player on each side
+        for (const half of ["front9", "back9"]) {
+          const a = m[half]?.playersA || [];
+          const b = m[half]?.playersB || [];
+          if (a.length === 0 || b.length === 0) {
+            alert(
+              `${m.matchLabel} – ${half}: please choose at least ONE player on each team.`
+            );
+            return;           // stop the save
+          }
         }
       }
     }
+    
 
   
     const docId = editingMatchId || `match_${selectedDateLocal}_${Date.now()}`;
@@ -147,46 +161,50 @@ const deepClean = (obj) => {
     const transformedMatches = matchSetups.map((match) => {
       // ── Individual match play 9 holes ──────────────────────────────────────────
       if (match.type === "individualMatch9") {
-        const team0 = match.players?.team0 || [];
-        const team1 = match.players?.team1 || [];
-  
+        /** helper to turn two player arrays into [{playerA,playerB}, …] */
+        const makePairs = (playersA = [], playersB = []) => {
+          const len = Math.max(playersA.length, playersB.length);
+          const pairs = [];
+          for (let i = 0; i < len; i++) {
+            if (playersA[i] && playersB[i]) {
+              pairs.push({ playerA: playersA[i], playerB: playersB[i] });
+            }
+          }
+          return pairs;
+        };
+      
+        const f9 = match.front9 || {};
+        const b9 = match.back9  || {};
+      
         return {
           matchLabel: match.matchLabel,
           type      : "individualMatch9",
-          participants: {                                 // keep original teams
-            team0: { teamName: match.team0, players: team0 },
-            team1: { teamName: match.team1, players: team1 }
+      
+          // save the raw selections (helpful when you re-open to edit later)
+          front9: {
+            teamA   : f9.teamA   || "",
+            playersA: f9.playersA || [],
+            teamB   : f9.teamB   || "",
+            playersB: f9.playersB || []
           },
-          pairings : {
-            front9 : [
-              { playerA: team0[0], playerB: team1[0] },
-              { playerA: team0[1], playerB: team1[1] },
-            ],
-            back9  : [
-              { playerA: team0[0], playerB: team1[1] },
-              { playerA: team0[1], playerB: team1[0] },
-            ]
+          back9: {
+            teamA   : b9.teamA   || "",
+            playersA: b9.playersA || [],
+            teamB   : b9.teamB   || "",
+            playersB: b9.playersB || []
           },
+      
+          // generate the pairings array that the rest of the app expects
+          pairings: {
+            front9: makePairs(f9.playersA, f9.playersB),
+            back9 : makePairs(b9.playersA, b9.playersB)
+          },
+      
           ...(match.excludeFromIndividual ? { excludeFromIndividual: true } : {})
         };
       }
-  
-      // ── Team match play 9 holes ────────────────────────────────────────────────
-      if (match.type === "teamMatch9") {
-        return {
-          matchLabel  : match.matchLabel,
-          type        : "teamMatch9",
-          participants: match.participants || {},
-          ...(match.excludeFromIndividual ? { excludeFromIndividual: true } : {})
-        };
-      }
-  
-      // ── everything else: copy as-is and merge the flag ─────────────────────────
-      return {
-        ...match,
-        ...(match.excludeFromIndividual ? { excludeFromIndividual: true } : {})
-      };
-    });
+      return match;
+    }); 
   
     /* ---------- 2.  Assemble the “day” document ------------------------------- */
     const newDay = {
@@ -370,6 +388,14 @@ const deepClean = (obj) => {
       onChange={(e) => {
         const updated = [...matchSetups];
         updated[index].type = e.target.value;
+
+        if (e.target.value === "individualMatch9") {
+          updated[index].team0    ??= "";
+          updated[index].team1    ??= "";
+          updated[index].players  ??= { team0: [], team1: [] };
+          updated[index].pairings ??= {};
+        }
+
         setMatchSetups(updated);
       }}
     >
@@ -538,53 +564,128 @@ const deepClean = (obj) => {
 )}
 
 
+
 {match.type === "individualMatch9" && (
-  <div>
-    {/* TEAM SELECTION */}
-    {[0, 1].map((teamIndex) => (
-      <div key={teamIndex}>
-        <label>Team {teamIndex + 1}:</label>
-        <select
-          value={match[`team${teamIndex}`] || ""}
-          onChange={(e) => {
-            const updated = [...matchSetups];
-            updated[index][`team${teamIndex}`] = e.target.value;
-            updated[index].players = updated[index].players || { team0: [], team1: [] };
-            setMatchSetups(updated);
-          }}
-        >
-          <option value="">Select Team</option>
-          {teams.map((team) => (
-            <option key={team.name} value={team.name}>{team.name}</option>
-          ))}
-        </select>
+  <>
+    {["front9", "back9"].map((half) => {
+      const nicerName = half === "front9" ? "Front 9" : "Back 9";
 
-        {/* SELECT 2 PLAYERS FROM THIS TEAM */}
-        {teams.find(t => t.name === match[`team${teamIndex}`])?.players.map((p, pIndex) => (
-          <label key={pIndex} className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={match.players?.[`team${teamIndex}`]?.includes(p.name) || false}
-              onChange={(e) => {
-                const updated = [...matchSetups];
-                const players = updated[index].players?.[`team${teamIndex}`] || [];
+      return (
+        <div key={half} style={{ border: "1px solid #ddd", padding: 10, marginTop: 12 }}>
+          <h4 style={{ margin: 0 }}>{nicerName}</h4>
 
-                if (e.target.checked && players.length < 2) {
-                  updated[index].players[`team${teamIndex}`] = [...players, p.name];
-                } else {
-                  updated[index].players[`team${teamIndex}`] = players.filter(name => name !== p.name);
-                }
+          {/* ─── TEAM-A selector ─── */}
+          <div style={{ marginTop: 6 }}>
+            <label>
+              
+              <select
+                value={match[half]?.teamA || ""}
+                onChange={(e) => {
+                  const updated = [...matchSetups];
+                  updated[index][half] ??= {};
+                  updated[index][half].teamA = e.target.value;
+                  // reset players when team changes
+                  updated[index][half].playersA = [];
+                  setMatchSetups(updated);
+                }}
+              >
+                <option value="">Select team…</option>
+                {teams.map((t) => (
+                  <option key={t.name} value={t.name}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-                setMatchSetups(updated);
-              }}
-            />
-            {p.name}
-          </label>
-        ))}
-      </div>
-    ))}
-  </div>
+            
+            {teams
+              .find((t) => t.name === match[half]?.teamA)
+              ?.players.map((p) => {
+                const sel = new Set(match[half]?.playersA || []);
+
+                return (
+                  <label key={p.name} style={{ display: "block", paddingLeft: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={sel.has(p.name)}
+                      onChange={(e) => {
+                        const updated = [...matchSetups];
+                        updated[index][half] ??= { playersA: [], playersB: [] };
+
+                        const list = new Set(updated[index][half].playersA);
+                        e.target.checked ? list.add(p.name) : list.delete(p.name);
+
+                        updated[index][half].playersA = Array.from(list);
+                        setMatchSetups(updated);
+                      }}
+                    />{" "}
+                    {p.name}
+                  </label>
+                );
+              })}
+
+
+            <hr style={{ margin: "8px 0" }} />
+
+            {/* ─── TEAM-B selector ─── */}
+            <label>
+             
+              <select
+                value={match[half]?.teamB || ""}
+                onChange={(e) => {
+                  const updated = [...matchSetups];
+                  updated[index][half] ??= {};
+                  updated[index][half].teamB = e.target.value;
+                  updated[index][half].playersB = [];
+                  setMatchSetups(updated);
+                }}
+              >
+                <option value="">Select team…</option>
+                {teams.map((t) => (
+                  <option key={t.name} value={t.name}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Check-boxes for Team-B players */}
+            {teams
+              .find((t) => t.name === match[half]?.teamB)
+              ?.players.map((p) => {
+                const sel = new Set(match[half]?.playersB || []);
+
+                return (
+                  <label key={p.name} style={{ display: "block", paddingLeft: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={sel.has(p.name)}
+                      onChange={(e) => {
+                        const updated = [...matchSetups];
+                        updated[index][half] ??= { playersA: [], playersB: [] };
+
+                        const list = new Set(updated[index][half].playersB);
+                        e.target.checked ? list.add(p.name) : list.delete(p.name);
+
+                        updated[index][half].playersB = Array.from(list);
+                        setMatchSetups(updated);
+                      }}
+                    />{" "}
+                    {p.name}
+                  </label>
+                );
+              })}
+          </div>
+        </div>
+      );
+    })}
+  </>
 )}
+
+
+
+
 
 
 {match.type === "stroke" && (
