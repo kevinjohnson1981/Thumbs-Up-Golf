@@ -596,6 +596,7 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   
 
   const saveScoresToFirebase = async () => {
+    console.log("💾 saveScoresToFirebase fired. matchType =", matchType);
     try {
       const label = selectedMatch?.matchLabel?.replace(/\s+/g, "_") || "Match";
       const scoresRef = doc(db, "tournaments", tournamentId, "scores", `scores_${selectedDate}_${matchType}_${label}`);
@@ -680,13 +681,24 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
             teamPoints = {
               [teamNames[0]]: {
                 front9: front9?.team1 ?? "-",
-                back9:  back9?.team1  ?? "-"
+                back9: back9?.team1 ?? "-",
+                total:
+                  (typeof front9?.team1 === "number" ? front9.team1 : 0) +
+                  (typeof back9?.team1 === "number" ? back9.team1 : 0)
               },
               [teamNames[1]]: {
                 front9: front9?.team2 ?? "-",
-                back9:  back9?.team2  ?? "-"
+                back9: back9?.team2 ?? "-",
+                total:
+                  (typeof front9?.team2 === "number" ? front9.team2 : 0) +
+                  (typeof back9?.team2 === "number" ? back9.team2 : 0)
               }
+
+              
             };
+            console.log("Front 9 team score:", front9);
+console.log("Back 9 team score:", back9);
+
           }
 
       if (matchType === "teamMatchFront9" || matchType === "teamMatchBack9") {
@@ -717,42 +729,93 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       }
       
       
-      if (matchType === "individualMatch9") {}
-        else if (matchType === "individualMatch9") {
-        const pairings = Object.values(selectedMatch?.pairings?.[visibleHalf]) || [];
-        const holesToCheck = visibleHalf === "front" ? [...Array(9).keys()] : [...Array(9).keys()].map(i => i + 9);
-        const matchResults = getIndividualMatchScore(pairings, holesToCheck);
+      if (matchType === "individualMatch9") {
+        // 1️⃣ translate "front" / "back" → "front9" / "back9"
+        const halfKey = visibleHalf === "front" ? "front9" : "back9";
       
-        const resultObj = {};
+        // pairings for this half
+        const pairingsArr = selectedMatch?.pairings?.[halfKey] || [];
       
-        pairings.forEach((pair, i) => {
-          const label = `${pair.playerA} vs ${pair.playerB}`;
-          resultObj[label] = {
-            pointsA: matchResults[i]?.pointsA ?? 0,
-            pointsB: matchResults[i]?.pointsB ?? 0,
+        // If we still don’t have pairings, bail early so we don’t crash
+        if (!Array.isArray(pairingsArr) || pairingsArr.length === 0) {
+          console.warn("No pairings found for", halfKey);
+          teamPoints = null;                   // nothing to save this time
+        } else {
+          const holesToCheck = halfKey === "front9"
+            ? [...Array(9).keys()]             // 0-8
+            : [...Array(9).keys()].map(i => i + 9);   // 9-17
+      
+          const matchResults = getIndividualMatchScore(pairingsArr, holesToCheck);
+      
+          // ------------------------------------------------------------------
+          // Build two things:
+          //   a) resultObj – per-pairing breakdown you were showing in the UI
+          //   b) teamPoints – totals for each team so we can save to Firebase
+          // ------------------------------------------------------------------
+          const resultObj = {};
+          let teamATotal = 0;
+          let teamBTotal = 0;
+      
+          pairingsArr.forEach((pair, i) => {
+            const pointsA = matchResults[i]?.pointsA ?? 0;
+            const pointsB = matchResults[i]?.pointsB ?? 0;
+      
+            // per-pairing details (optional – only if you still want them)
+            resultObj[`${pair.playerA} vs ${pair.playerB}`] = { pointsA, pointsB };
+      
+            teamATotal += pointsA;
+            teamBTotal += pointsB;
+          });
+      
+          // Grab the team names that were chosen when the match was created
+          const teamAName = selectedMatch?.[halfKey]?.teamA || "Team A";
+          const teamBName = selectedMatch?.[halfKey]?.teamB || "Team B";
+      
+          teamPoints = {
+            [teamAName]: { total: teamATotal },
+            [teamBName]: { total: teamBTotal }
           };
-        });
       
-        teamPoints = resultObj;
+          // 👉 If you still want to keep the per-pairing breakdown in Firebase,
+          // merge it in too:
+          // teamPoints.breakdown = resultObj;
+        }
       }
+      
+      
 
       if (matchType === "individualMatch18") {
         const pairings = selectedMatch?.pairings || [];
-        const holesToCheck = [...Array(18).keys()];
-        const matchResults = getIndividualMatchScore(pairings, holesToCheck);
       
-        const resultObj = {};
+        // Guard: if no pairings, skip scoring
+        if (!Array.isArray(pairings) || pairings.length === 0) {
+          console.warn("No pairings found for individualMatch18");
+          teamPoints = null;
+        } else {
+          const holesToCheck = [...Array(18).keys()];
+          const matchResults = getIndividualMatchScore(pairings, holesToCheck);
       
-        pairings.forEach((pair, i) => {
-          const label = `${pair.playerA} vs ${pair.playerB}`;
-          resultObj[label] = {
-            pointsA: matchResults[i]?.pointsA ?? 0,
-            pointsB: matchResults[i]?.pointsB ?? 0,
+          let teamATotal = 0;
+          let teamBTotal = 0;
+      
+          pairings.forEach((pair, i) => {
+            const pointsA = matchResults[i]?.pointsA ?? 0;
+            const pointsB = matchResults[i]?.pointsB ?? 0;
+      
+            teamATotal += pointsA;
+            teamBTotal += pointsB;
+          });
+      
+          const teamAName = selectedMatch?.teamA || "Team A";
+          const teamBName = selectedMatch?.teamB || "Team B";
+      
+          teamPoints = {
+            [teamAName]: { total: teamATotal },
+            [teamBName]: { total: teamBTotal }
           };
-        });
-      
-        teamPoints = resultObj;
+        }
       }
+      
       
       
       
