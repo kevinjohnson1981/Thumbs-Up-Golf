@@ -29,7 +29,7 @@ body {
 
 .team-ballbusterz td {
   background-color: rgb(255, 0, 0);
-  color: lightgray;
+  color: white;
 }
 
 .team-goldentees td {
@@ -43,8 +43,8 @@ body {
 }
 
 .team-justthetips td {
-  background-color: rgb(1, 162, 255);
-  color: lightgreen;
+  background-color: green;
+  color: white;
 }
 
 .team-red {

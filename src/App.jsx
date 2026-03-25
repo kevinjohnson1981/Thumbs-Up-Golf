@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import './style.css'
-import { auth } from "./firebase";
+import { auth, storage } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import Login from "./Login";
 import { signOut } from "firebase/auth";
@@ -18,12 +18,10 @@ import { signInAnonymously } from "firebase/auth";
 import IndividualLeaderboard from './IndividualLeaderboard';
 import TeamLeaderboard from './TeamLeaderboard';
 import PlayerNav from './PlayerNav';
-
-
-
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 function App() {
-  const [view, setView] = useState("setupOptions");
+  const [view, setView] = useState("adminDashboard");
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -41,16 +39,44 @@ function App() {
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [selectedMatchObject, setSelectedMatchObject] = useState(null);
   const [lastMatchView, setLastMatchView] = useState(null);
+  const [selectedLogoFile, setSelectedLogoFile] = useState(null);
 
+  const defaultLogo = "/ThumbsUpGolf2.png";
 
-
+  const headerLogoSrc =
+    view === "adminDashboard"
+      ? defaultLogo
+      : selectedTournament?.logoUrl?.trim() || defaultLogo;
 
   const generateDefaultCode = () => {
     const random = Math.floor(100000 + Math.random() * 900000);
     return `TUP${random}`;
   };
   
-
+  const handleRemoveTournamentLogo = async () => {
+    if (!selectedTournament?.id) return;
+  
+    try {
+      if (selectedTournament.logoUrl) {
+        const logoRef = ref(storage, selectedTournament.logoUrl);
+        await deleteObject(logoRef);
+      }
+  
+      await saveTournamentData(selectedTournament.id, {
+        logoUrl: ""
+      });
+  
+      setSelectedTournament((prev) =>
+        prev ? { ...prev, logoUrl: "" } : prev
+      );
+  
+      setSelectedLogoFile(null);
+  
+      console.log("✅ Tournament logo removed");
+    } catch (error) {
+      console.error("❌ Error removing tournament logo:", error);
+    }
+  };
   
   const saveTournamentData = async (tournamentId, data) => {
     try {
@@ -194,7 +220,11 @@ useEffect(() => {
     <div className="container">
       <header style={{ borderBottom: "5px solid #ccc", paddingBottom: "10px", marginBottom: "10px" }}>
         <div className="app-header">
-          <img src="/ThumbsUpGolf2.png" alt="Thumbs Up Golf Logo" className="app-logo" />
+          <img
+            src={headerLogoSrc}
+            alt="Tournament Logo"
+            className="app-logo"
+          />
         </div>
       </header>
 
@@ -273,6 +303,10 @@ useEffect(() => {
           setEventCode={setEventCode}
           playersPerTeam={playersPerTeam}
           setPlayersPerTeam={setPlayersPerTeam}
+          selectedLogoFile={selectedLogoFile}
+          setSelectedLogoFile={setSelectedLogoFile}
+          currentLogoUrl={selectedTournament?.logoUrl || ""}
+          onRemoveLogo={handleRemoveTournamentLogo}
           onContinue={async () => {
             let updatedTeams = selectedTournament?.teams || [];
           
@@ -288,15 +322,46 @@ useEffect(() => {
           
             const code = eventCode?.trim() || generateDefaultCode();
           
+            let logoUrl = selectedTournament?.logoUrl || "";
+          
+            if (selectedLogoFile && selectedTournament?.id) {
+              try {
+                const fileName = `tournament-logos/${selectedTournament.id}/${Date.now()}_${selectedLogoFile.name}`;
+                const storageRef = ref(storage, fileName);
+          
+                await uploadBytes(storageRef, selectedLogoFile);
+                logoUrl = await getDownloadURL(storageRef);
+          
+                console.log("✅ Logo uploaded successfully:", logoUrl);
+              } catch (error) {
+                console.error("❌ Error uploading logo:", error);
+              }
+            }
+          
             if (selectedTournament?.id) {
               await saveTournamentData(selectedTournament.id, {
                 name: tournamentName,
                 numTeams,
                 playersPerTeam,
-                eventCode: code // 💥 Save the generated or custom event code here!
+                eventCode: code,
+                logoUrl
               });
+            
+              setSelectedTournament((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      name: tournamentName,
+                      numTeams,
+                      playersPerTeam,
+                      eventCode: code,
+                      logoUrl
+                    }
+                  : prev
+              );
             }
-          
+            
+            setSelectedLogoFile(null);
             setView("teamSetup");
           }}
           goBack={() => {

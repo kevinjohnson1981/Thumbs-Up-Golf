@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 function SetupOptions({
   tournamentName,
@@ -7,11 +7,30 @@ function SetupOptions({
   setNumTeams,
   playersPerTeam,
   setPlayersPerTeam,
-  eventCode,                // ✅ ADD THIS
-  setEventCode,             // ✅ AND THIS
+  eventCode,
+  setEventCode,
+  selectedLogoFile,
+  setSelectedLogoFile,
+  currentLogoUrl,
+  onRemoveLogo,
   onContinue,
   goBack
 }) {
+
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    if (!selectedLogoFile) {
+      setPreviewUrl("");
+      return;
+    }
+  
+    const objectUrl = URL.createObjectURL(selectedLogoFile);
+    setPreviewUrl(objectUrl);
+  
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedLogoFile]);
+
   return (
     <div style={{ padding: "0.1rem" }}>
       <h2>📝 Tournament Setup</h2>
@@ -71,6 +90,59 @@ function SetupOptions({
     If left unchanged, code above will be used.
     </small>
   </label>
+
+  <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+  <label>
+    Tournament Logo<br />
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e) => setSelectedLogoFile(e.target.files[0] || null)}
+      style={{ marginTop: "0.5rem" }}
+    />
+    <br />
+    <small style={{ fontSize: "0.8em" }}>
+      Upload an image to use as this tournament's logo.
+    </small>
+  </label>
+
+  {selectedLogoFile && (
+  <div style={{ marginTop: "0.75rem", textAlign: "center" }}>
+    <div>Selected file: {selectedLogoFile.name}</div>
+
+    {previewUrl && (
+      <img
+        src={previewUrl}
+        alt="Logo preview"
+        style={{
+          marginTop: "0.5rem",
+          maxWidth: "150px",
+          maxHeight: "150px",
+          borderRadius: "8px",
+          border: "1px solid #ccc",
+          display: "block",
+          marginLeft: "auto",
+          marginRight: "auto"
+        }}
+      />
+    )}
+  </div>
+)}
+
+  {currentLogoUrl && !selectedLogoFile && (
+  <div style={{ marginTop: "1rem" }}>
+    <div style={{ marginBottom: "0.5rem" }}>Current Logo:</div>
+    <img
+      src={currentLogoUrl}
+      alt="Current tournament logo"
+      style={{ maxWidth: "150px", maxHeight: "150px", display: "block", marginBottom: "0.5rem" }}
+    />
+    <button type="button" onClick={onRemoveLogo}>
+      Remove Logo
+    </button>
+  </div>
+)}
+</div>
 
   <button type="button" onClick={onContinue}>
     Continue
