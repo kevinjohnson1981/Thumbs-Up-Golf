@@ -13,6 +13,9 @@ function SetupOptions({
   setSelectedLogoFile,
   currentLogoUrl,
   onRemoveLogo,
+  selectedTheme,
+  setSelectedTheme,
+  themeOptions,
   onContinue,
   goBack
 }) {
@@ -90,6 +93,24 @@ function SetupOptions({
     If left unchanged, code above will be used.
     </small>
   </label>
+
+  <div style={{ marginTop: "1rem", marginBottom: "1rem", textAlign: "center" }}>
+    <label>
+      Color Scheme
+      <br />
+      <select
+        value={selectedTheme}
+        onChange={(e) => setSelectedTheme(e.target.value)}
+        style={{ marginTop: "0.5rem", padding: "0.5rem", width: "220px" }}
+      >
+        {Object.entries(themeOptions).map(([key, theme]) => (
+          <option key={key} value={key}>
+            {theme.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  </div>
 
   <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>
   <label>

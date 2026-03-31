@@ -40,6 +40,41 @@ function App() {
   const [selectedMatchObject, setSelectedMatchObject] = useState(null);
   const [lastMatchView, setLastMatchView] = useState(null);
   const [selectedLogoFile, setSelectedLogoFile] = useState(null);
+  const [selectedTheme, setSelectedTheme] = useState("classicBlue");
+
+  const themeOptions = {
+    classicBlue: {
+      label: "America",
+      backgroundColor: "#d44242",
+      buttonColor: "#8f8f8f",
+      textColor: "#3f33c4",
+      cardColor: "#d44242"
+    },
+    mastersGreen: {
+      label: "Masters Green",
+      backgroundColor: "#68ad5a",
+      buttonColor: "#176308",
+      textColor: "#0b3b02",
+      cardColor: "#68ad5a"
+    },
+    sunsetGold: {
+      label: "Sunset Gold",
+      backgroundColor: "#d18130",
+      buttonColor: "#c4340c",
+      textColor: "#c4340c",
+      cardColor: "#d18130"
+    },
+    midnight: {
+      label: "Midnight",
+      backgroundColor: "#1f2937",
+      buttonColor: "#4f4f4f",
+      textColor: "#a30000",
+      cardColor: "#1f2937"
+    }
+  };
+
+  const activeTheme =
+    themeOptions[selectedTournament?.theme || selectedTheme] || themeOptions.classicBlue;
 
   const defaultLogo = "/ThumbsUpGolf2.png";
 
@@ -107,6 +142,7 @@ function App() {
       setNumTeams(selectedTournament.numTeams || 2);
       setPlayersPerTeam(selectedTournament.playersPerTeam || 3);
       setEventCode(selectedTournament.eventCode || "");
+      setSelectedTheme(selectedTournament.theme || "classicBlue");
     }
   }, [selectedTournament]);
   
@@ -137,6 +173,7 @@ function App() {
           setSelectedTournament(tournaments[0]);
           setTournamentName(tournaments[0].name);
           setTeams(tournaments[0].teams || []);
+          setSelectedTheme(tournaments[0].theme || "classicBlue");
           setView("adminDashboard");
         }
       } catch (error) {
@@ -201,6 +238,7 @@ useEffect(() => {
               setSelectedTournament(tournamentData);
               setTournamentName(tournamentData.name);
               setTeams(tournamentData.teams || []);
+              setSelectedTheme(tournamentData.theme || "classicBlue");
               setView("selectMatchDay");
             } else {
               alert("❌ Invalid event code. Please try again.");
@@ -217,8 +255,18 @@ useEffect(() => {
   }
 
   return (
-    <div className="container">
-      <header style={{ borderBottom: "5px solid #ccc", paddingBottom: "10px", marginBottom: "10px" }}>
+    <div className="container"
+      style={{
+        backgroundColor: activeTheme.backgroundColor,
+        color: activeTheme.textColor,
+        minHeight: "100vh"
+      }}>
+      <header style={{
+        borderBottom: `5px solid ${activeTheme.buttonColor}`,
+        paddingBottom: "10px",
+        marginBottom: "10px",
+        backgroundColor: activeTheme.cardColor
+      }}>
         <div className="app-header">
           <img
             src={headerLogoSrc}
@@ -269,6 +317,7 @@ useEffect(() => {
             setSelectedTournament(tournament);
             setTournamentName(tournament.name);
             setTeams(tournament.teams || []);
+            setSelectedTheme(tournament.theme || "classicBlue");
             setSetupComplete(true);
             setView("setupOptions");
           }}
@@ -307,6 +356,9 @@ useEffect(() => {
           setSelectedLogoFile={setSelectedLogoFile}
           currentLogoUrl={selectedTournament?.logoUrl || ""}
           onRemoveLogo={handleRemoveTournamentLogo}
+          selectedTheme={selectedTheme}
+          setSelectedTheme={setSelectedTheme}
+          themeOptions={themeOptions}
           onContinue={async () => {
             let updatedTeams = selectedTournament?.teams || [];
           
@@ -344,7 +396,8 @@ useEffect(() => {
                 numTeams,
                 playersPerTeam,
                 eventCode: code,
-                logoUrl
+                logoUrl,
+                theme: selectedTheme
               });
             
               setSelectedTournament((prev) =>
@@ -355,7 +408,8 @@ useEffect(() => {
                       numTeams,
                       playersPerTeam,
                       eventCode: code,
-                      logoUrl
+                      logoUrl,
+                      theme: selectedTheme
                     }
                   : prev
               );
