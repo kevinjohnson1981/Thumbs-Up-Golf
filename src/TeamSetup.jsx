@@ -63,26 +63,54 @@ function TeamSetup({ teams, setTeams, goNext, goBack, tournamentName, selectedTo
                 style={{ marginLeft: "0px" }}
               />
             </div>
-            <div style={{ marginBottom: "0.5rem" }}>
+            <div style={{ marginBottom: "0.75rem" }}>
               <label>Team Color:</label>
-              <select
-                value={team.color || ""}
-                onChange={(e) => {
-                  const updatedTeams = [...teams];
-                  updatedTeams[index].color = e.target.value;
-                  setTeams(updatedTeams);
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  justifyContent: "center",
+                  marginTop: "0.5rem"
                 }}
-                style={{ marginLeft: "0px" }}
               >
-                <option value="">Select a color</option>
-                <option value="red">Red 🔴</option>
-                <option value="blue">Blue 🔵</option>
-                <option value="green">Green 🟢</option>
-                <option value="purple">Purple 🟣</option>
-                <option value="orange">Orange 🟠</option>
-                <option value="black">Black ⚫</option>
-                <option value="yellow">Yellow 🟡</option>
-              </select>
+                <input
+                  type="color"
+                  value={team.color || "#808080"}
+                  onChange={(e) => {
+                    const updatedTeams = [...teams];
+                    updatedTeams[index].color = e.target.value;
+                    setTeams(updatedTeams);
+                  }}
+                  style={{
+                    width: "50px",
+                    height: "40px",
+                    padding: "0",
+                    border: "none",
+                    background: "none",
+                    cursor: "pointer"
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: "0.95rem",
+                    fontWeight: "bold",
+                    minWidth: "80px",
+                    textAlign: "left"
+                  }}
+                >
+                  {team.color || "#808080"}
+                </span>
+                <div
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "6px",
+                    border: "1px solid #999",
+                    backgroundColor: team.color || "#808080"
+                  }}
+                />
+              </div>
             </div>
             <label>Players:</label>
             {team.players.map((player, pIndex) => (

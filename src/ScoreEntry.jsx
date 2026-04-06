@@ -77,6 +77,35 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   
     return brightness > 140 ? "#000000" : "#ffffff";
   };
+
+  const lightenColor = (color, amount = 0.75) => {
+    if (!color) return "#ffffff";
+
+    const namedColors = {
+      red: "#ff0000",
+      blue: "#0000ff",
+      green: "#008000",
+      purple: "#800080",
+      orange: "#ffa500",
+      black: "#000000",
+      yellow: "#ffff00"
+    };
+
+    const hexColor = namedColors[color.toLowerCase()] || color;
+
+    const hex = hexColor.replace("#", "");
+    if (hex.length !== 6) return "#ffffff";
+
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    const newR = Math.round(r + (255 - r) * amount);
+    const newG = Math.round(g + (255 - g) * amount);
+    const newB = Math.round(b + (255 - b) * amount);
+
+    return `rgb(${newR}, ${newG}, ${newB})`;
+  };
   
   const getMatchPlayHoleWinner = (holeIndex) => {
     if (!teamPlayers.team1 || !teamPlayers.team2) return null;
@@ -170,19 +199,19 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     }
     
     if (matchType === "individualMatch9") {
-      const front9 = selectedMatch.pairings?.front9 || [];
-      const back9 = selectedMatch.pairings?.back9 || [];
+      const selectedPlayers = [
+        ...(selectedMatch?.front9?.playersA || []),
+        ...(selectedMatch?.front9?.playersB || []),
+        ...(selectedMatch?.back9?.playersA || []),
+        ...(selectedMatch?.back9?.playersB || [])
+      ];
     
-      const orderedFront = front9.flatMap(pair => [pair.playerA, pair.playerB]);
-      const orderedBack = back9.flatMap(pair => [pair.playerA, pair.playerB]);
+      const uniquePlayers = [...new Set(selectedPlayers)];
     
-      // Use the appropriate order based on the current scorecard tab
-      const orderedPlayers = scorecardTab === "front9" ? orderedFront : orderedBack;
-    
-      const allPlayers = orderedPlayers.map((name) => {
+      const allPlayers = uniquePlayers.map((name) => {
         const liveTeamObj = getPlayerTeamFromTournament(name);
         const playerObj = liveTeamObj?.players?.find((p) => p.name === name);
-
+    
         return {
           name,
           handicap: parseInt(playerObj?.handicap || 0),
@@ -406,30 +435,7 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
   }}, [scores, matchData, players, matchType]);
 
-  useEffect(() => {
-    if (!selectedMatch || !matchData || matchType !== "individualMatch9") return;
   
-    const front9 = selectedMatch.pairings?.front9 || [];
-    const back9 = selectedMatch.pairings?.back9 || [];
-  
-    const orderedPlayers = scorecardTab === "front9"
-      ? front9.flatMap(pair => [pair.playerA, pair.playerB])
-      : back9.flatMap(pair => [pair.playerA, pair.playerB]);
-  
-    const allPlayers = orderedPlayers.map((name) => {
-      const liveTeamObj = getPlayerTeamFromTournament(name);
-      const playerObj = liveTeamObj?.players?.find((p) => p.name === name);
-
-      return {
-        name,
-        handicap: parseInt(playerObj?.handicap || 0),
-        teamName: liveTeamObj?.name || "",
-        teamColor: liveTeamObj?.color || "gray"
-      };
-    });
-  
-    setLocalPlayers(allPlayers);
-  }, [scorecardTab, selectedMatch, matchData, teams]);
   
   
 
@@ -568,7 +574,28 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     return results;
   };
   
+  const getIndividualHoleWinners = (holeIndex) => {
+    if (matchType !== "individualMatch9") return [];
   
+    const currentPairings =
+      scorecardTab === "front9"
+        ? selectedMatch?.pairings?.front9 || []
+        : selectedMatch?.pairings?.back9 || [];
+  
+    const winners = [];
+  
+    currentPairings.forEach((pair) => {
+      const aNet = scores[pair.playerA]?.[holeIndex]?.net;
+      const bNet = scores[pair.playerB]?.[holeIndex]?.net;
+  
+      if (aNet == null || bNet == null) return;
+  
+      if (aNet < bNet) winners.push(pair.playerA);
+      else if (bNet < aNet) winners.push(pair.playerB);
+    });
+  
+    return winners;
+  };
 
   const getTeamScore = (team1, team2, holesRange) => {
     let team1Total = 0;
@@ -1232,19 +1259,22 @@ console.log("Back 9 team score:", back9);
                               if (["teamMatch18", "teamMatch9", "teamMatchFront9", "teamMatchBack9"].includes(matchType)) {
                                 const winner = getMatchPlayHoleWinner(realIndex);
                                 if (!winner || winner === "tie") return "white";
-
+                            
                                 const winningTeam = winner === "team1" ? teamPlayers.team1 : teamPlayers.team2;
                                 if (winningTeam.includes(p.name)) {
-                                  const teamColor = p.teamColor?.toLowerCase();
-                                  return teamColor === "red" ? "#ffcccc" :
-                                        teamColor === "yellow" ? "#ffffcc" :
-                                        teamColor === "blue" ? "#cce5ff" :
-                                        teamColor === "black" ? "#d9d9d9" :
-                                        teamColor === "green" ? "#ccffcc" :
-                                        teamColor === "purple" ? "#e0ccff" :
-                                        teamColor === "orange" ? "#ffe5cc" : "white";
+                                  const teamColor = p.teamColor || "#cccccc";
+                                  return lightenColor(teamColor, 0.75);
                                 }
                               }
+                            
+                              if (matchType === "individualMatch9") {
+                                const holeWinners = getIndividualHoleWinners(realIndex);
+                                if (holeWinners.includes(p.name)) {
+                                  const teamColor = p.teamColor || "#cccccc";
+                                  return lightenColor(teamColor, 0.75);
+                                }
+                              }
+                            
                               return "white";
                             })()
                           }}

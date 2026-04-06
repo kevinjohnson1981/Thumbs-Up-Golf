@@ -136,18 +136,23 @@ function IndividualLeaderboard({ selectedTournamentId, teams = [] }) {
     )
   ).sort();
 
+  const dayLabels = allDates.map((date, idx) => ({
+    date,
+    label: `Day ${idx + 1}`
+  }));
+
   return (
     <div>
       <h2>Individual Leaderboard</h2>
       <table border="1" className="header-table">
         <thead>
-          <tr>
-            <th>Player</th>
-            {allDates.map(date => (
-              <th key={date}>{date}</th>
-            ))}
-            <th>Total</th>
-          </tr>
+        <tr>
+          <th>Player</th>
+          {dayLabels.map((day) => (
+            <th key={day.date}>{day.label}</th>
+          ))}
+          <th>Total</th>
+        </tr>
         </thead>
         <tbody>
           {leaderboardData.map((player, idx) => (
@@ -159,10 +164,10 @@ function IndividualLeaderboard({ selectedTournamentId, teams = [] }) {
             }}
           >
               <td>{player.name}</td>
-              {allDates.map(date => {
-                const score = player.scoresByDay[date];
+              {dayLabels.map((day) => {
+                const score = player.scoresByDay[day.date];
                 return (
-                  <td key={date}>
+                  <td key={day.date}>
                     {score
                       ? `${score.gross} / ${score.net} (${score.netToPar > 0 ? "+" : ""}${score.netToPar})`
                       : ""}
