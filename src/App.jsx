@@ -26,6 +26,7 @@ function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [eventCode, setEventCode] = useState("");
+  const [rules, setRules] = useState("");
   const [teams, setTeams] = useState([]);
   const [tournamentName, setTournamentName] = useState("");
   const [numTeams, setNumTeams] = useState(2);
@@ -40,9 +41,18 @@ function App() {
   const [selectedMatchObject, setSelectedMatchObject] = useState(null);
   const [lastMatchView, setLastMatchView] = useState(null);
   const [selectedLogoFile, setSelectedLogoFile] = useState(null);
-  const [selectedTheme, setSelectedTheme] = useState("classicBlue");
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState("defaultGray");
+  
 
   const themeOptions = {
+    defaultGray: {
+      label: "Default Gray",
+      backgroundColor: "#afafaf",
+      buttonColor: "#d3d3d3",
+      textColor: "#000000",
+      cardColor: "#afafaf"
+    },
     classicBlue: {
       label: "America",
       backgroundColor: "#d44242",
@@ -74,7 +84,7 @@ function App() {
   };
 
   const activeTheme =
-    themeOptions[selectedTournament?.theme || selectedTheme] || themeOptions.classicBlue;
+    themeOptions[selectedTournament?.theme || selectedTheme] || themeOptions.defaultGray;
 
   const defaultLogo = "/ThumbsUpGolf2.png";
 
@@ -142,7 +152,8 @@ function App() {
       setNumTeams(selectedTournament.numTeams || 2);
       setPlayersPerTeam(selectedTournament.playersPerTeam || 3);
       setEventCode(selectedTournament.eventCode || "");
-      setSelectedTheme(selectedTournament.theme || "classicBlue");
+      setRules(selectedTournament.rules || "");
+      setSelectedTheme(selectedTournament.theme || "defaultGray");
     }
   }, [selectedTournament]);
   
@@ -173,7 +184,7 @@ function App() {
           setSelectedTournament(tournaments[0]);
           setTournamentName(tournaments[0].name);
           setTeams(tournaments[0].teams || []);
-          setSelectedTheme(tournaments[0].theme || "classicBlue");
+          setSelectedTheme(tournaments[0].theme || "defaultGray");
           setView("adminDashboard");
         }
       } catch (error) {
@@ -238,7 +249,7 @@ useEffect(() => {
               setSelectedTournament(tournamentData);
               setTournamentName(tournamentData.name);
               setTeams(tournamentData.teams || []);
-              setSelectedTheme(tournamentData.theme || "classicBlue");
+              setSelectedTheme(tournamentData.theme || "defaultGray");
               setView("selectMatchDay");
             } else {
               alert("❌ Invalid event code. Please try again.");
@@ -281,6 +292,7 @@ useEffect(() => {
           onGoHome={() => setView("selectMatchDay")}
           onGoIndividualLeaderboard={() => setView("individualLeaderboard")}
           onGoTeamLeaderboard={() => setView("teamLeaderboard")}
+          onShowRules={() => setShowRulesModal(true)}
           tournamentName={tournamentName} // 👈 pass it in here
         />
       )}
@@ -300,9 +312,11 @@ useEffect(() => {
               numTeams: 2,
               playersPerTeam: 3,
               eventCode: defaultCode, // 👈 add this!
+              rules: "",
               createdAt: new Date().toISOString(),
             };
             setEventCode(defaultCode); // 👈 also set it in state
+            setRules("");
 
           
             await setDoc(doc(db, "tournaments", newTournamentId), newTournament);
@@ -317,7 +331,7 @@ useEffect(() => {
             setSelectedTournament(tournament);
             setTournamentName(tournament.name);
             setTeams(tournament.teams || []);
-            setSelectedTheme(tournament.theme || "classicBlue");
+            setSelectedTheme(tournament.theme || "defaultGray");
             setSetupComplete(true);
             setView("setupOptions");
           }}
@@ -350,6 +364,8 @@ useEffect(() => {
           setNumTeams={setNumTeams}
           eventCode={eventCode}
           setEventCode={setEventCode}
+          rules={rules}
+          setRules={setRules}
           playersPerTeam={playersPerTeam}
           setPlayersPerTeam={setPlayersPerTeam}
           selectedLogoFile={selectedLogoFile}
@@ -396,6 +412,7 @@ useEffect(() => {
                 numTeams,
                 playersPerTeam,
                 eventCode: code,
+                rules,
                 logoUrl,
                 theme: selectedTheme
               });
@@ -408,6 +425,7 @@ useEffect(() => {
                       numTeams,
                       playersPerTeam,
                       eventCode: code,
+                      rules,
                       logoUrl,
                       theme: selectedTheme
                     }
@@ -495,7 +513,10 @@ useEffect(() => {
 
 {view === "individualLeaderboard" && (
   <>
-    <IndividualLeaderboard selectedTournamentId={selectedTournament?.id} />
+    <IndividualLeaderboard
+      selectedTournamentId={selectedTournament?.id}
+      teams={teams}
+    />
     {lastMatchView && (
       <button
         onClick={() => {
@@ -529,6 +550,62 @@ useEffect(() => {
       </button>
     )}
   </>
+)}
+
+{showRulesModal && (
+  <div style={{
+    position: "fixed",
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  }}>
+    <div style={{
+      background: "#fff",
+      borderRadius: "10px",
+      padding: "20px",
+      width: "75%",
+      maxWidth: "800px",
+      position: "relative"
+    }}>
+      <button
+        onClick={() => setShowRulesModal(false)}
+        style={{
+          position: "absolute",
+          top: "1px",
+          right: "1px",
+          border: "none",
+          background: "transparent",
+          color: "#FF0000",
+          fontSize: "2rem",
+          fontWeight: "bold",
+          cursor: "pointer"
+        }}
+      >
+        X
+      </button>
+
+      <h2 style={{ marginTop: 0 }}>
+        {tournamentName ? `${tournamentName} Rules` : "Tournament Rules"}
+      </h2>
+
+      {rules && rules.trim() ? (
+        <pre
+          style={{
+            whiteSpace: "pre-wrap",
+            fontFamily: "inherit",
+            lineHeight: "1.5"
+          }}
+        >
+          {rules}
+        </pre>
+      ) : (
+        <p>No rules have been added yet.</p>
+      )}
+    </div>
+  </div>
 )}
 
       {user && (

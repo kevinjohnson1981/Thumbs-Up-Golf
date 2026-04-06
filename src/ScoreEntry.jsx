@@ -8,7 +8,7 @@ import { useRef } from "react";
 
 console.log("🔥 ScoreEntry is being rendered");
 
-function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMatch, setScoresInApp, setTeamPointsInApp, teamPoints }) {
+function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMatch, setScoresInApp, setTeamPointsInApp, teamPoints, teams = [] }) {
 
   const [matchData, setMatchData] = useState(null);
   const [localPlayers, setLocalPlayers] = useState([]);
@@ -28,6 +28,20 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   };
   const [visibleHalf, setVisibleHalf] = useState("front");
   const [scorecardTab, setScorecardTab] = useState("front9"); // or "back9"
+
+  const getLiveTeam = (teamName) => {
+    return teams.find((t) => t.name === teamName) || null;
+  };
+
+  const getLiveTeamColor = (teamName) => {
+    return getLiveTeam(teamName)?.color || "gray";
+  };
+
+  const getPlayerTeamFromTournament = (playerName) => {
+    return teams.find((team) =>
+      team.players?.some((p) => p.name === playerName)
+    ) || null;
+  };
 
   const getTeamColor = (teamName) => {
     const team = teams.find(t => t.name === teamName);
@@ -137,15 +151,15 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       const allPlayers = [...team1.players, ...team2.players].map((playerName) => {
         const teamName =
           team1.players.includes(playerName) ? team1.teamName : team2.teamName;
-        const teamObj = matchData.teams.find((t) => t.name === teamName);
-        const playerObj = teamObj?.players.find((p) => p.name === playerName);
-    
-        return {
-          name: playerName,
-          handicap: parseInt(playerObj?.handicap || 0),
-          teamName: teamName,
-          teamColor: teamObj?.color || "gray"  // 👈 grab the color from the team
-        };
+          const liveTeamObj = getLiveTeam(teamName);
+          const playerObj = liveTeamObj?.players?.find((p) => p.name === playerName);
+          
+          return {
+            name: playerName,
+            handicap: parseInt(playerObj?.handicap || 0),
+            teamName: teamName,
+            teamColor: getLiveTeamColor(teamName)
+          };
       });
     
       setLocalPlayers(allPlayers);
@@ -166,16 +180,14 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       const orderedPlayers = scorecardTab === "front9" ? orderedFront : orderedBack;
     
       const allPlayers = orderedPlayers.map((name) => {
-        const teamObj = matchData.teams.find((t) =>
-          t.players.some((p) => p.name === name)
-        );
-        const playerObj = teamObj?.players.find((p) => p.name === name);
-    
+        const liveTeamObj = getPlayerTeamFromTournament(name);
+        const playerObj = liveTeamObj?.players?.find((p) => p.name === name);
+
         return {
           name,
           handicap: parseInt(playerObj?.handicap || 0),
-          teamName: teamObj?.name || "",
-          teamColor: teamObj?.color || "gray"  // 👈 grab the color from the team
+          teamName: liveTeamObj?.name || "",
+          teamColor: liveTeamObj?.color || "gray"
         };
       });
     
@@ -193,14 +205,14 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
       const allPlayers = [...(team0.players || []), ...(team1.players || [])].map((playerName) => {
         const teamName = team0.players.includes(playerName) ? team0.teamName : team1.teamName;
-        const teamObj = matchData.teams.find((t) => t.name === teamName);
-        const playerObj = teamObj?.players.find((p) => p.name === playerName);
-    
+        const liveTeamObj = getLiveTeam(teamName);
+        const playerObj = liveTeamObj?.players?.find((p) => p.name === playerName);
+
         return {
           name: playerName,
           handicap: parseInt(playerObj?.handicap || 0),
           teamName: teamName,
-          teamColor: teamObj?.color || "gray"
+          teamColor: getLiveTeamColor(teamName)
         };
       });
     
@@ -228,16 +240,14 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       }
     
       const allPlayers = participantNames.map((name) => {
-        const teamObj = matchData.teams.find((t) =>
-          t.players.some((p) => p.name === name)
-        );
-        const playerObj = teamObj?.players.find((p) => p.name === name);
-    
+        const liveTeamObj = getPlayerTeamFromTournament(name);
+        const playerObj = liveTeamObj?.players?.find((p) => p.name === name);
+
         return {
           name,
-          handicap: playerObj?.handicap || 0,
-          teamName: teamObj?.name || "",
-          teamColor: teamObj?.color || "gray"  // 👈 grab the color from the team
+          handicap: parseInt(playerObj?.handicap || 0),
+          teamName: liveTeamObj?.name || "",
+          teamColor: liveTeamObj?.color || "gray"
         };
       });
     
@@ -251,15 +261,14 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
       const allPlayers = entries.map((entry) => {
         const playerName = typeof entry === "string" ? entry : entry.name;
-        const teamObj = matchData.teams.find((t) =>
-          t.players.some((p) => p.name === playerName)
-        );
-        const playerObj = teamObj?.players.find((p) => p.name === playerName);
+        const liveTeamObj = getPlayerTeamFromTournament(playerName);
+        const playerObj = liveTeamObj?.players?.find((p) => p.name === playerName);
+    
         return {
           name: playerName,
           handicap: parseInt(playerObj?.handicap || 0),
-          teamName: teamObj?.name || "",
-          teamColor: teamObj?.color || "gray"  // 👈 grab the color from the team
+          teamName: liveTeamObj?.name || "",
+          teamColor: liveTeamObj?.color || "gray"
         };
       });
     
@@ -272,16 +281,14 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       const orderedPlayers = pairings.flatMap(pair => [pair.playerA, pair.playerB]);
     
       const allPlayers = orderedPlayers.map((name) => {
-        const teamObj = matchData.teams.find((t) =>
-          t.players.some((p) => p.name === name)
-        );
-        const playerObj = teamObj?.players.find((p) => p.name === name);
-    
+        const liveTeamObj = getPlayerTeamFromTournament(name);
+        const playerObj = liveTeamObj?.players?.find((p) => p.name === name);
+
         return {
           name,
           handicap: parseInt(playerObj?.handicap || 0),
-          teamName: teamObj?.name || "",
-          teamColor: teamObj?.color || "gray"
+          teamName: liveTeamObj?.name || "",
+          teamColor: liveTeamObj?.color || "gray"
         };
       });
     
@@ -290,7 +297,7 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
     
     
-  }, [selectedMatch, matchData, matchType]);
+  }, [selectedMatch, matchData, matchType, teams, scorecardTab]);
   
 
   useEffect(() => {
@@ -410,21 +417,19 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       : back9.flatMap(pair => [pair.playerA, pair.playerB]);
   
     const allPlayers = orderedPlayers.map((name) => {
-      const teamObj = matchData.teams.find((t) =>
-        t.players.some((p) => p.name === name)
-      );
-      const playerObj = teamObj?.players.find((p) => p.name === name);
-  
+      const liveTeamObj = getPlayerTeamFromTournament(name);
+      const playerObj = liveTeamObj?.players?.find((p) => p.name === name);
+
       return {
         name,
         handicap: parseInt(playerObj?.handicap || 0),
-        teamName: teamObj?.name || "",
-        teamColor: teamObj?.color || "gray"  // 👈 grab the color from the team
+        teamName: liveTeamObj?.name || "",
+        teamColor: liveTeamObj?.color || "gray"
       };
     });
   
     setLocalPlayers(allPlayers);
-  }, [scorecardTab, selectedMatch, matchData]);
+  }, [scorecardTab, selectedMatch, matchData, teams]);
   
   
 

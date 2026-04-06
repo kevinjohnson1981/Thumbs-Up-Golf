@@ -9,6 +9,8 @@ function SetupOptions({
   setPlayersPerTeam,
   eventCode,
   setEventCode,
+  rules,
+  setRules,
   selectedLogoFile,
   setSelectedLogoFile,
   currentLogoUrl,
@@ -94,6 +96,29 @@ function SetupOptions({
     </small>
   </label>
 
+  <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+    <label>
+      Tournament Rules / Weekend Notes
+      <br />
+      <textarea
+        value={rules ?? ""}
+        onChange={(e) => setRules(e.target.value)}
+        placeholder="Enter tournament rules, scoring notes, side games, payouts, or weekend schedule..."
+        rows={8}
+        style={{
+          width: "75%",
+          padding: "0.5rem",
+          marginTop: "0.5rem",
+          borderRadius: "8px"
+        }}
+      />
+      <br />
+      <small style={{ fontSize: "0.8em" }}>
+        Add any rules, format notes, or weekend information players should see.
+      </small>
+    </label>
+  </div>
+
   <div style={{ marginTop: "1rem", marginBottom: "1rem", textAlign: "center" }}>
     <label>
       Color Scheme
@@ -103,11 +128,11 @@ function SetupOptions({
         onChange={(e) => setSelectedTheme(e.target.value)}
         style={{ marginTop: "0.5rem", padding: "0.5rem", width: "220px" }}
       >
-        {Object.entries(themeOptions).map(([key, theme]) => (
-          <option key={key} value={key}>
-            {theme.label}
-          </option>
-        ))}
+        <option value="defaultGray">Default Gray</option>
+        <option value="classicBlue">America</option>
+        <option value="mastersGreen">Masters Green</option>
+        <option value="sunsetGold">Sunset Gold</option>
+        <option value="midnight">Midnight</option>
       </select>
     </label>
   </div>

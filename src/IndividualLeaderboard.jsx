@@ -3,11 +3,25 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebase';
 import { onSnapshot } from "firebase/firestore";
 
-function IndividualLeaderboard({ selectedTournamentId }) {
+function IndividualLeaderboard({ selectedTournamentId, teams = [] }) {
 
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
   const PAR = 72; // or change if your event uses a different par
+
+  const getTextColor = (bgColor) => {
+    if (!bgColor) return "black";
+
+    const lightColors = ["yellow", "gold", "#ffff00", "#ffd700", "lightyellow"];
+    return lightColors.includes(bgColor.toLowerCase()) ? "black" : "white";
+  };
+
+  const teamColorMap = {};
+  teams.forEach((team) => {
+    if (team?.name) {
+      teamColorMap[team.name] = team.color || "";
+    }
+  });
 
   useEffect(() => {
     if (!selectedTournamentId) return;
@@ -111,11 +125,8 @@ function IndividualLeaderboard({ selectedTournamentId }) {
   
   
     fetchLeaderboardData();
-  }, []);
+  }, [selectedTournamentId]);
   
-
-  
-
 
   if (loading) return <p>Loading leaderboard...</p>;
 
@@ -140,7 +151,13 @@ function IndividualLeaderboard({ selectedTournamentId }) {
         </thead>
         <tbody>
           {leaderboardData.map((player, idx) => (
-            <tr key={idx} className={player.team ? `team-${player.team.replace(/\s+/g, '').toLowerCase()}` : ''}>
+            <tr
+            key={idx}
+            style={{
+              backgroundColor: teamColorMap[player.team] || "",
+              color: getTextColor(teamColorMap[player.team] || "")
+            }}
+          >
               <td>{player.name}</td>
               {allDates.map(date => {
                 const score = player.scoresByDay[date];

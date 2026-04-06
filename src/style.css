@@ -10,7 +10,7 @@ body {
 /* Player name cell color for Ball Busterz */
 .player-name-header.team-red {
   background-color: red;
-  color: lightgray;
+  color: #d3d3d3;
 }
 .player-name-header.team-gold {
   background-color: yellow;
@@ -25,26 +25,6 @@ body {
 .player-name-header.team-blue {
   background-color: rgb(1, 162, 255);
   color: lightgreen;
-}
-
-.team-ballbusterz td {
-  background-color: rgb(255, 0, 0);
-  color: white;
-}
-
-.team-goldentees td {
-  background-color: rgb(231, 235, 11);
-  color: black;
-}
-
-.team-blackteetitans td {
-  background-color: black;
-  color: white;
-}
-
-.team-justthetips td {
-  background-color: green;
-  color: white;
 }
 
 .team-red {

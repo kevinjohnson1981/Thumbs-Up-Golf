@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import MapboxDistanceMap from './MapboxDistanceMap'; // 👈 Make sure this is correct
 import './MapboxMap.css'; // Optional: reuse your map styling
 
-function PlayerNav({ onGoHome, onGoIndividualLeaderboard, onGoTeamLeaderboard, tournamentName }) {
+function PlayerNav({ onGoHome, onGoIndividualLeaderboard, onGoTeamLeaderboard, onShowRules, tournamentName }) {
   const [showMap, setShowMap] = useState(false);
 
   return (
@@ -14,6 +14,7 @@ function PlayerNav({ onGoHome, onGoIndividualLeaderboard, onGoTeamLeaderboard, t
       <button onClick={onGoHome} style={{ marginRight: "10px" }}>⛳</button>
       <button onClick={onGoIndividualLeaderboard} style={{ marginRight: "10px" }}>🥇🏌️‍♂️</button>
       <button onClick={onGoTeamLeaderboard} style={{ marginRight: "10px" }}>🏆🏌️‍♂️🏌️‍♂️🏌️‍♂️</button>
+      <button onClick={onShowRules} style={{ marginRight: "10px" }}>📋 Rules</button>
       <button onClick={() => setShowMap(true)} style={{ marginRight: "10px" }}>📍 GPS Map</button>
 
       {/* ✅ Simple modal for the map */}
