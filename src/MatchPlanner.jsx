@@ -8,6 +8,7 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedTeeBox, setSelectedTeeBox] = useState(null);
   const [holes, setHoles] = useState([]);
+  const [originalHoles, setOriginalHoles] = useState([]);
   const [bestBallMatches, setBestBallMatches] = useState([
     { matchTeams: [{ teamName: "", players: [] }, { teamName: "", players: [] }] },
     { matchTeams: [{ teamName: "", players: [] }, { teamName: "", players: [] }] },
@@ -95,7 +96,19 @@ function MatchPlanner({ goBack, teams, setSelectedDate, tournamentId }) {
     }
   
     setHoles(selectedTee.holes); // ✅ Store hole data
+    setOriginalHoles(selectedTee.holes);
     console.log("Holes loaded successfully:", selectedTee.holes);
+  };
+
+  const updateHoleField = (holeIndex, field, value) => {
+    const parsedValue = value === "" ? "" : parseInt(value, 10);
+    setHoles((prev) =>
+      prev.map((hole, index) =>
+        index === holeIndex
+          ? { ...hole, [field]: Number.isNaN(parsedValue) ? "" : parsedValue }
+          : hole
+      )
+    );
   };
 
   // remove every key whose value is undefined OR an array element that is undefined
@@ -242,6 +255,7 @@ const updateMatchSetup = (idx, newMatch) => {
       setSelectedCourse(null);
       setSelectedTeeBox(null);
       setHoles([]);
+      setOriginalHoles([]);
       setMatchSetups([{ matchLabel: "Match 1", type: "" }]);
       setEditingMatchId(null);
     } catch (err) {
@@ -272,6 +286,7 @@ const updateMatchSetup = (idx, newMatch) => {
           setSelectedCourse(match.course);
           setSelectedTeeBox(match.teeBox);
           setHoles(match.teeBox?.holes || []);
+          setOriginalHoles(match.teeBox?.holes || []);
           setMatchSetups(match.matches || []);
         }}>
           ✏️ Edit This Match
@@ -328,18 +343,66 @@ const updateMatchSetup = (idx, newMatch) => {
 
       {selectedTeeBox && (
         <div>
-          <h3>Hole Information:</h3>
+          <h3>Hole Information (Review & Edit Before Saving):</h3>
           {holes.length > 0 ? (
-            <ul>
-              {holes.map((hole, index) => (
-                <li key={index}>
-                  Hole {index + 1}: 
-                  {hole.yardage ? `${hole.yardage} yards` : " No Yard Data"},
-                  Par {hole.par ? hole.par : "Unknown"}, 
-                  HCP {hole.handicap ? hole.handicap : "Unknown"}
-                </li>              
-              ))}
-            </ul>
+            <>
+              <p style={{ marginBottom: "0.5rem" }}>
+                If yardage, par, or handicap does not match the scorecard, update it below.
+              </p>
+              <table style={{ borderCollapse: "collapse", width: "100%", maxWidth: "650px" }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: "left" }}>Hole</th>
+                    <th style={{ textAlign: "left" }}>Yards</th>
+                    <th style={{ textAlign: "left" }}>Par</th>
+                    <th style={{ textAlign: "left" }}>HCP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {holes.map((hole, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <input
+                          type="number"
+                          min="1"
+                          value={hole.yardage ?? ""}
+                          onChange={(e) => updateHoleField(index, "yardage", e.target.value)}
+                          style={{ width: "90px" }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          min="1"
+                          max="6"
+                          value={hole.par ?? ""}
+                          onChange={(e) => updateHoleField(index, "par", e.target.value)}
+                          style={{ width: "60px" }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          min="1"
+                          max="18"
+                          value={hole.handicap ?? ""}
+                          onChange={(e) => updateHoleField(index, "handicap", e.target.value)}
+                          style={{ width: "60px" }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button
+                type="button"
+                onClick={() => setHoles([...originalHoles])}
+                style={{ marginTop: "0.75rem" }}
+              >
+                Reset to API Values
+              </button>
+            </>
           ) : (
             <p>Loading hole data...</p>
           )}
