@@ -207,12 +207,7 @@ function IndividualLeaderboard({ selectedTournamentId, teams = [] }) {
                         return (
                           <td key={day.date} className="leaderboard-day-cell">
                             {score
-                              ? (
-                                <>
-                                  <span className="leaderboard-day-to-par">{formatToPar(score.netToPar)}</span>
-                                  <span className="leaderboard-day-detail">({score.gross} / {score.net})</span>
-                                </>
-                              )
+                              ? <span className="leaderboard-day-to-par">{formatToPar(score.netToPar)}</span>
                               : ""}
                           </td>
                         );

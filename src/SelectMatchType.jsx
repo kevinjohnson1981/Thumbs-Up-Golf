@@ -85,7 +85,7 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
     <div className="admin-page-shell">
       <section className="admin-hero-card compact player-select-hero">
         <div className="admin-hero-copy">
-          <p className="player-select-hero-intro">
+          <p className="player-select-hero-intro match-select-date-line">
             {`You're scoring for ${formatDisplayDate(selectedDate)}.`}
           </p>
           <p className="player-select-hero-course">

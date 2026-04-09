@@ -1677,6 +1677,11 @@ input[type=number] {
   color: #173321;
 }
 
+.match-select-date-line {
+  font-size: clamp(0.94rem, 4.4vw, 1.18rem);
+  white-space: nowrap;
+}
+
 .player-select-hero .admin-hero-copy h2 {
   font-size: 1.3rem;
   font-weight: 700;
@@ -1918,17 +1923,8 @@ input[type=number] {
 
 .leaderboard-day-to-par {
   display: block;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 800;
-  line-height: 1.1;
-}
-
-.leaderboard-day-detail {
-  display: block;
-  margin-top: 2px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  opacity: 0.9;
   line-height: 1.1;
 }
 
@@ -2219,7 +2215,16 @@ input[type=number] {
 
   .team-inline-field,
   .team-inline-field.compact {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .team-inline-field input[type="text"] {
+    width: 100%;
+    max-width: 100%;
   }
 
   .team-color-row {

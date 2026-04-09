@@ -40,7 +40,6 @@ function TeamSetup({ teams, setTeams, goNext, goBack, tournamentName, selectedTo
 
                 <div
                   className="team-inline-field"
-                  style={{ display: "grid", gridTemplateColumns: "110px 260px", alignItems: "center", gap: "12px" }}
                 >
                   <label htmlFor={`team-name-${index}`} style={{ marginBottom: 0 }}>Team Name</label>
                   <input
@@ -53,13 +52,12 @@ function TeamSetup({ teams, setTeams, goNext, goBack, tournamentName, selectedTo
                       updatedTeams[index].name = e.target.value;
                       setTeams(updatedTeams);
                     }}
-                    style={{ width: "260px", maxWidth: "260px", marginBottom: 0 }}
+                    style={{ marginBottom: 0 }}
                   />
                 </div>
 
                 <div
                   className="team-inline-field compact"
-                  style={{ display: "grid", gridTemplateColumns: "110px 72px", alignItems: "center", gap: "12px" }}
                 >
                   <label htmlFor={`team-color-${index}`} style={{ marginBottom: 0 }}>Team Color</label>
                   <input
@@ -72,7 +70,7 @@ function TeamSetup({ teams, setTeams, goNext, goBack, tournamentName, selectedTo
                       setTeams(updatedTeams);
                     }}
                     className="team-color-input"
-                    style={{ width: "72px", maxWidth: "72px", marginBottom: 0 }}
+                    style={{ marginBottom: 0 }}
                   />
                 </div>
 
