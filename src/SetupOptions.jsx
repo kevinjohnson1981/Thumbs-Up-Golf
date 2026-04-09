@@ -17,11 +17,12 @@ function SetupOptions({
   onRemoveLogo,
   selectedTheme,
   setSelectedTheme,
+  customTheme,
+  setCustomTheme,
   themeOptions,
   onContinue,
   goBack
 }) {
-
   const [previewUrl, setPreviewUrl] = useState("");
 
   useEffect(() => {
@@ -29,179 +30,242 @@ function SetupOptions({
       setPreviewUrl("");
       return;
     }
-  
+
     const objectUrl = URL.createObjectURL(selectedLogoFile);
     setPreviewUrl(objectUrl);
-  
+
     return () => URL.revokeObjectURL(objectUrl);
   }, [selectedLogoFile]);
 
+  const themePreview = selectedTheme === "custom"
+    ? customTheme
+    : themeOptions[selectedTheme] || themeOptions.defaultGray;
+
   return (
-    <div style={{ padding: "0.1rem" }}>
-      <h2>📝 Tournament Setup</h2>
+    <div className="admin-page-shell">
+      <section className="admin-hero-card compact">
+        <div className="admin-hero-copy">
+          <p className="admin-eyebrow">Tournament Setup</p>
+          <h2>Build the basics for your weekend</h2>
+          <p>Name the event, set team sizes, choose the look, and add the notes players need.</p>
+        </div>
+      </section>
 
-      <div style={{ marginBottom: "0.1rem" }}>
-        <label>Tournament Name:<br />
-        <input
-          type="text"
-          value={tournamentName}
-          onChange={(e) => setTournamentName(e.target.value)}
-          placeholder="e.g. Thumbs Up Golf Classic"
-          style={{ width: "75%", padding: "0.5rem", marginTop: "" }}
-        />
-        </label>
-      </div>
+      <section className="admin-section-card">
+        <form className="setup-form-grid" onSubmit={(e) => e.preventDefault()}>
+          <div className="setup-main-column">
+            <div className="setup-panel">
+              <div className="setup-panel-header">
+                <h3>Event details</h3>
+                <p>Start with the core information players and admins will see throughout the app.</p>
+              </div>
 
-      <div className="form-row">
-        <label htmlFor="numTeams">Number of Teams:</label>
-        <select
-          id="numTeams"
-          value={numTeams}
-          onChange={(e) => setNumTeams(parseInt(e.target.value))}
-        >
-          {[2, 3, 4].map((n) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </select>
-      </div>
+              <div className="setup-field-group">
+                <label htmlFor="tournament-name">Tournament Name</label>
+                <input
+                  id="tournament-name"
+                  type="text"
+                  value={tournamentName}
+                  onChange={(e) => setTournamentName(e.target.value)}
+                  placeholder="e.g. Thumbs Up Golf Classic"
+                />
+              </div>
 
-      <div className="form-row">
-        <label htmlFor="playersPerTeam">Players Per Team:</label>
-        <select
-          id="playersPerTeam"
-          value={playersPerTeam}
-          onChange={(e) => setPlayersPerTeam(parseInt(e.target.value))}
-        >
-          {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </select>
-      </div>
+              <div className="setup-split-fields">
+                <div className="setup-field-group">
+                  <label htmlFor="numTeams">Number of Teams</label>
+                  <select
+                    id="numTeams"
+                    value={numTeams}
+                    onChange={(e) => setNumTeams(parseInt(e.target.value, 10))}
+                  >
+                    {[2, 3, 4].map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
 
+                <div className="setup-field-group">
+                  <label htmlFor="playersPerTeam">Players Per Team</label>
+                  <select
+                    id="playersPerTeam"
+                    value={playersPerTeam}
+                    onChange={(e) => setPlayersPerTeam(parseInt(e.target.value, 10))}
+                  >
+                    {[2, 3, 4, 5, 6, 7, 8].map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
+              <div className="setup-field-group">
+                <label htmlFor="event-code">Event Code</label>
+                <input
+                  id="event-code"
+                  type="text"
+                  value={eventCode ?? ""}
+                  onChange={(e) => setEventCode(e.target.value.toUpperCase())}
+                  placeholder="Leave blank for auto-generated"
+                />
+                <p className="setup-help-text">
+                  You can customize the code now, or keep the generated one.
+                </p>
+              </div>
 
-      <form onSubmit={(e) => e.preventDefault()}>
-  <label>
-    Event Code<br />
-    <input
-      type="text"
-      value={eventCode ?? ""}
-      onChange={(e) => setEventCode(e.target.value)}
-      placeholder="Leave blank for auto-generated"
-      style={{ width: "50%", padding: "0.5rem", marginTop: "" }}
-    /><br />
-    <small style={{ fontSize: "0.8em", color: "" }}>
-    Code can be changed. <br />
-    If left unchanged, code above will be used.
-    </small>
-  </label>
+              <div className="setup-field-group">
+                <label htmlFor="rules">Tournament Rules / Weekend Notes</label>
+                <textarea
+                  id="rules"
+                  value={rules ?? ""}
+                  onChange={(e) => setRules(e.target.value)}
+                  placeholder="Enter tournament rules, scoring notes, side games, payouts, or weekend schedule..."
+                  rows={8}
+                />
+                <p className="setup-help-text">
+                  Add any information players should be able to reference during the weekend.
+                </p>
+              </div>
+            </div>
+          </div>
 
-  <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>
-    <label>
-      Tournament Rules / Weekend Notes
-      <br />
-      <textarea
-        value={rules ?? ""}
-        onChange={(e) => setRules(e.target.value)}
-        placeholder="Enter tournament rules, scoring notes, side games, payouts, or weekend schedule..."
-        rows={8}
-        style={{
-          width: "75%",
-          padding: "0.5rem",
-          marginTop: "0.5rem",
-          borderRadius: "8px"
-        }}
-      />
-      <br />
-      <small style={{ fontSize: "0.8em" }}>
-        Add any rules, format notes, or weekend information players should see.
-      </small>
-    </label>
-  </div>
+          <div className="setup-side-column">
+            <div className="setup-panel">
+              <div className="setup-panel-header">
+                <h3>Visual style</h3>
+                <p>Choose the theme and logo treatment players will see across the event.</p>
+              </div>
 
-  <div style={{ marginTop: "1rem", marginBottom: "1rem", textAlign: "center" }}>
-    <label>
-      Color Scheme
-      <br />
-      <select
-        value={selectedTheme}
-        onChange={(e) => setSelectedTheme(e.target.value)}
-        style={{ marginTop: "0.5rem", padding: "0.5rem", width: "220px" }}
-      >
-        <option value="defaultGray">Default Gray</option>
-        <option value="classicBlue">America</option>
-        <option value="mastersGreen">Masters Green</option>
-        <option value="sunsetGold">Sunset Gold</option>
-        <option value="midnight">Midnight</option>
-      </select>
-    </label>
-  </div>
+              <div className="setup-panel-header theme-picker-header">
+                <h3>Color Scheme</h3>
+                <p>Choose a preset or switch to a custom palette.</p>
+              </div>
 
-  <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>
-  <label>
-    Tournament Logo<br />
-    <input
-      type="file"
-      accept="image/*"
-      onChange={(e) => setSelectedLogoFile(e.target.files[0] || null)}
-      style={{ marginTop: "0.5rem" }}
-    />
-    <br />
-    <small style={{ fontSize: "0.8em" }}>
-      Upload an image to use as this tournament's logo.
-    </small>
-  </label>
+              <div className="theme-preview-grid">
+                {Object.entries(themeOptions).map(([themeKey, theme]) => (
+                  <button
+                    key={themeKey}
+                    type="button"
+                    className={`theme-preview-card ${selectedTheme === themeKey ? 'active' : ''}`}
+                    onClick={() => setSelectedTheme(themeKey)}
+                  >
+                    <span
+                      className="theme-preview-swatch"
+                      style={{ background: `linear-gradient(135deg, ${theme.backgroundColor}, ${theme.buttonColor})` }}
+                    />
+                    <span>{theme.label}</span>
+                  </button>
+                ))}
+              </div>
 
-  {selectedLogoFile && (
-  <div style={{ marginTop: "0.75rem", textAlign: "center" }}>
-    <div>Selected file: {selectedLogoFile.name}</div>
+              <div
+                className="custom-theme-preview always-visible"
+                style={{
+                  background: `linear-gradient(180deg, ${themePreview.backgroundColor}, ${themePreview.cardColor})`,
+                  color: themePreview.textColor
+                }}
+              >
+                <div
+                  className="custom-theme-preview-card"
+                  style={{ backgroundColor: themePreview.cardColor, color: themePreview.textColor }}
+                >
+                  <strong>{themeOptions[selectedTheme]?.label || "Theme Preview"}</strong>
+                  <span>This preview updates for both preset themes and custom colors.</span>
+                  <button
+                    type="button"
+                    className="custom-theme-preview-button"
+                    style={{ backgroundColor: themePreview.buttonColor, color: themePreview.textColor }}
+                  >
+                    Theme Accent
+                  </button>
+                </div>
+              </div>
 
-    {previewUrl && (
-      <img
-        src={previewUrl}
-        alt="Logo preview"
-        style={{
-          marginTop: "0.5rem",
-          maxWidth: "150px",
-          maxHeight: "150px",
-          borderRadius: "8px",
-          border: "1px solid #ccc",
-          display: "block",
-          marginLeft: "auto",
-          marginRight: "auto"
-        }}
-      />
-    )}
-  </div>
-)}
+              {selectedTheme === "custom" && (
+                <div className="custom-theme-editor">
+                  <div className="setup-panel-header">
+                    <h3>Custom Theme</h3>
+                    <p>Choose the main colors for the app while keeping the same polished layout.</p>
+                  </div>
 
-  {currentLogoUrl && !selectedLogoFile && (
-  <div style={{ marginTop: "1rem" }}>
-    <div style={{ marginBottom: "0.5rem" }}>Current Logo:</div>
-    <img
-      src={currentLogoUrl}
-      alt="Current tournament logo"
-      style={{ maxWidth: "150px", maxHeight: "150px", display: "block", marginBottom: "0.5rem" }}
-    />
-    <button type="button" onClick={onRemoveLogo}>
-      Remove Logo
-    </button>
-  </div>
-)}
-</div>
+                  <div className="custom-theme-grid">
+                    <label className="custom-color-field">
+                      <span>Background</span>
+                      <input
+                        type="color"
+                        value={customTheme.backgroundColor}
+                        onChange={(e) => setCustomTheme((prev) => ({ ...prev, backgroundColor: e.target.value }))}
+                      />
+                    </label>
+                    <label className="custom-color-field">
+                      <span>Cards / Panels</span>
+                      <input
+                        type="color"
+                        value={customTheme.cardColor}
+                        onChange={(e) => setCustomTheme((prev) => ({ ...prev, cardColor: e.target.value }))}
+                      />
+                    </label>
+                    <label className="custom-color-field">
+                      <span>Buttons / Accent</span>
+                      <input
+                        type="color"
+                        value={customTheme.buttonColor}
+                        onChange={(e) => setCustomTheme((prev) => ({ ...prev, buttonColor: e.target.value }))}
+                      />
+                    </label>
+                    <label className="custom-color-field">
+                      <span>Text</span>
+                      <input
+                        type="color"
+                        value={customTheme.textColor}
+                        onChange={(e) => setCustomTheme((prev) => ({ ...prev, textColor: e.target.value }))}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
 
-  <button type="button" onClick={onContinue}>
-    Continue
-  </button>
-</form>
+              <div className="setup-field-group">
+                <label htmlFor="logo-upload">Tournament Logo</label>
+                <input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setSelectedLogoFile(e.target.files[0] || null)}
+                />
+                <p className="setup-help-text">Upload an image to use as your tournament logo.</p>
+              </div>
 
-{goBack && (
-  <button onClick={goBack} style={{ marginTop: "1rem", backgroundColor: "" }}>
-    ⬅️ Back
-  </button>
-)}
+              {(previewUrl || currentLogoUrl) && (
+                <div className="logo-preview-card">
+                  <p>{selectedLogoFile ? `Selected file: ${selectedLogoFile.name}` : "Current logo"}</p>
+                  <img
+                    src={previewUrl || currentLogoUrl}
+                    alt="Tournament logo preview"
+                    className="logo-preview-image"
+                  />
+                  {currentLogoUrl && !selectedLogoFile && (
+                    <button type="button" className="admin-secondary-button" onClick={onRemoveLogo}>
+                      Remove Logo
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </form>
 
-
+        <div className="setup-actions">
+          {goBack && (
+            <button type="button" className="admin-secondary-button" onClick={goBack}>
+              Back
+            </button>
+          )}
+          <button type="button" className="admin-primary-button" onClick={onContinue}>
+            Continue to Team Setup
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

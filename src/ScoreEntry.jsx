@@ -5,9 +5,6 @@ import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import { useRef } from "react";
 
-
-console.log("🔥 ScoreEntry is being rendered");
-
 function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMatch, setScoresInApp, setTeamPointsInApp, teamPoints, teams = [] }) {
 
   const [matchData, setMatchData] = useState(null);
@@ -163,10 +160,6 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   
   useEffect(() => {
     if (!selectedMatch || !matchData) return;
-    console.log("💡 MatchType:", matchType);
-    console.log("🎯 SelectedMatch:", selectedMatch);
-    console.log("📦 MatchData.teams:", matchData?.teams);
-
   
     if (matchType === "teamMatch18") {
       const team1 = selectedMatch.participants?.team1;
@@ -427,7 +420,6 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
         teamTotals[playerObj.teamName].total += teamPoints;
       });
     
-      console.log("🔥 Stableford teamPoints (tiered):", teamTotals);
       if (typeof setTeamPointsInApp === "function") {
         setTeamPointsInApp(teamTotals);
       }
@@ -454,10 +446,6 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     if (handicap >= holeHcp + 18) strokes = 2;
   
     const net = gross - strokes;
-    console.log("⛳️ updateScore:", playerName, holeIndex, grossScore);
-    console.log("🧪 Saving score for:", playerName, "→ Hole:", holeIndex, "→ Gross:", grossScore);
-
-
     setScores((prev) => ({
       ...prev,
       [playerName]: {
@@ -471,7 +459,17 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   };
   
 
-  if (loading) return <p>Loading match...</p>;
+  if (loading) {
+    return (
+      <div className="admin-page-shell score-entry-page-shell">
+        <section className="admin-hero-card compact player-select-hero">
+          <div className="admin-hero-copy">
+            <h2>Loading Scorecard</h2>
+          </div>
+        </section>
+      </div>
+    );
+  }
   if (!matchData) return <p>No match data found.</p>;
   if (!localPlayers || localPlayers.length === 0) {
     console.log("⚠️ No players found:", localPlayers);
@@ -628,7 +626,6 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   
 
   const saveScoresToFirebase = async () => {
-    console.log("💾 saveScoresToFirebase fired. matchType =", matchType);
     try {
       const label = selectedMatch?.matchLabel?.replace(/\s+/g, "_") || "Match";
       const scoresRef = doc(db, "tournaments", tournamentId, "scores", `scores_${selectedDate}_${matchType}_${label}`);
@@ -728,9 +725,6 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
 
               
             };
-            console.log("Front 9 team score:", front9);
-console.log("Back 9 team score:", back9);
-
           }
 
       if (matchType === "teamMatchFront9" || matchType === "teamMatchBack9") {
@@ -849,14 +843,6 @@ console.log("Back 9 team score:", back9);
       }
       
       
-      
-      
-
-      console.log("Saving to Firebase:", {
-        scores,
-        teamPoints
-      });
-
       const scoresWithTeamNames = {};
 
       localPlayers.forEach(player => {
@@ -1007,24 +993,22 @@ console.log("Back 9 team score:", back9);
   
     return (
       <div className="match-status" style={{ marginBottom: "10px" }}>
-        <strong>
-          {matchType === "teamMatch18"
-            ? "18-Hole Match Score"
-            : `${visibleHalf === "front" ? "Front 9" : "Back 9"} Match Score`}
-        </strong>
-        : {teamNames[0]}: {result.team1} | {teamNames[1]}: {result.team2}
+        <strong>{teamNames[0]}: {result.team1} | {teamNames[1]}: {result.team2}</strong>
       </div>
     );
   })();
   
 
   return (
-    <div className="container" ref={scorecardRef}>
+    <div className="admin-page-shell score-entry-page-shell">
+      <section className="admin-hero-card compact player-select-hero">
+        <div className="admin-hero-copy">
+          <p className="player-select-hero-intro">{selectedMatch?.matchLabel || "Match Scorecard"}</p>
+          <h2>{matchData.course.course_name} • {matchData.teeBox.tee_name} • {matchData.teeBox.total_yards} yards</h2>
+        </div>
+      </section>
 
-      <div className="course-details">
-        <h3>{matchData.course.course_name}</h3>
-        <p>{matchData.teeBox.tee_name} - {matchData.teeBox.total_yards} yards</p>
-      </div>
+      <section className="admin-section-card score-entry-section-card" ref={scorecardRef}>
 
       {bestBallStatusBlock}
 
@@ -1063,16 +1047,13 @@ console.log("Back 9 team score:", back9);
         </div>
       )}
 
-<div style={{ marginBottom: "10px" }}>
+<div className="score-entry-toggle-row">
   <button
     onClick={() => {
       setVisibleHalf("front");
       setScorecardTab("front9");  // 🧠 this triggers the player order change
     }}
-    style={{ 
-      marginRight: "10px", 
-      fontWeight: visibleHalf === "front" ? "bold" : "normal" 
-    }}
+    className={`score-entry-toggle-button ${visibleHalf === "front" ? "active" : ""}`}
   >
     Front 9
   </button>
@@ -1081,9 +1062,7 @@ console.log("Back 9 team score:", back9);
       setVisibleHalf("back");
       setScorecardTab("back9");  // 🧠 switch to back 9 players
     }}
-    style={{ 
-      fontWeight: visibleHalf === "back" ? "bold" : "normal" 
-    }}
+    className={`score-entry-toggle-button ${visibleHalf === "back" ? "active" : ""}`}
   >
     Back 9
   </button>
@@ -1327,11 +1306,14 @@ console.log("Back 9 team score:", back9);
       </div>
 
       {/*<button onClick={saveScoresToFirebase}>Save Scores</button> */}
-      <button onClick={exportToExcel}>Download Excel</button>
-      <button onClick={exportScorecardAsImage}>Download Image</button>
+      <div className="score-entry-actions">
+        <button className="admin-secondary-button" onClick={exportToExcel}>Download Excel</button>
+        <button className="admin-primary-button" onClick={exportScorecardAsImage}>Download Image</button>
+      </div>
 
 
     
+      </section>
     </div>
   );
 }

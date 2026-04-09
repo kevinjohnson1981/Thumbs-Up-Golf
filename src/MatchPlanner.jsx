@@ -138,6 +138,11 @@ const updateMatchSetup = (idx, newMatch) => {
   );
 };
 
+const formatPlayerOptionLabel = (player) => {
+  const handicap = player?.handicap ?? "";
+  return handicap === "" ? player.name : `${player.name} (${handicap})`;
+};
+
   
 
   const addDayToFirebase = async () => {
@@ -268,17 +273,31 @@ const updateMatchSetup = (idx, newMatch) => {
 
 
   return (
-    <div>
-      
-      <h2>Match Planner</h2>
+    <div className="admin-page-shell match-planner-page">
+      <section className="admin-hero-card">
+        <div className="admin-hero-copy">
+          <p className="admin-eyebrow">Match Planner</p>
+          <h2>Build your match day</h2>
+          <p>Choose the date, course, tee box, and scoring formats for the round.</p>
+        </div>
+      </section>
+
       {existingMatches.length > 0 && (
-  <div style={{ marginBottom: '2rem' }}>
-    <h3>📅 Existing Match Days</h3>
+  <section className="admin-section-card">
+    <div className="admin-section-header">
+      <div>
+        <p className="admin-eyebrow">Saved Days</p>
+        <h3>Existing Match Days</h3>
+      </div>
+    </div>
+    <div className="tournament-card-grid">
     {existingMatches.map(match => (
-      <div key={match.id} style={{ border: "1px solid gray", padding: "10px", marginBottom: "10px" }}>
-        <strong>Date:</strong> {match.date} <br />
-        <strong>Course:</strong> {match.course?.course_name || "N/A"} <br />
-        <strong>Tee:</strong> {match.teeBox?.tee_name || "N/A"} <br />
+      <article key={match.id} className="tournament-card">
+        <h4>{match.date}</h4>
+        <p className="tournament-card-subtitle">
+          {match.course?.course_name || "N/A"} {match.teeBox?.tee_name ? `• ${match.teeBox.tee_name}` : ""}
+        </p>
+        <div className="tournament-card-actions">
         <button onClick={() => {
           setSelectedDate(match.date);
           setSelectedDateLocal(match.date);
@@ -289,19 +308,23 @@ const updateMatchSetup = (idx, newMatch) => {
           setOriginalHoles(match.teeBox?.holes || []);
           setMatchSetups(match.matches || []);
         }}>
-          ✏️ Edit This Match
+          Edit This Match
         </button>
-        <button style={{ marginLeft: '10px', color: 'red' }} onClick={() => deleteMatch(match.id)}>🗑️ Delete</button>
+        <button className="admin-danger-button" onClick={() => deleteMatch(match.id)}>Delete</button>
+        </div>
 
-      </div>
+      </article>
     ))}
-  </div>
+    </div>
+  </section>
 )}
 
-      <button onClick={goBack}>Back to Team Setup</button>
-
-      <h2>Select Date:</h2>
+      <section className="admin-section-card">
+      <div className="setup-panel">
+      <div className="match-planner-inline-field">
+      <label htmlFor="match-date-input">Select Date:</label>
       <input
+        id="match-date-input"
         type="date"
         value={selectedDateLocal}
         onChange={(e) => {
@@ -310,9 +333,8 @@ const updateMatchSetup = (idx, newMatch) => {
           setSelectedDate(date);       // notify parent App.jsx
         }}
       />
+      </div>
 
-
-      <h3>Selected Course: {selectedCourse?.course_name || "No Course Selected"}</h3>
       <CourseSelector 
         setSelectedCourse={(course) => {
           console.log("Course selected:", course);
@@ -320,6 +342,8 @@ const updateMatchSetup = (idx, newMatch) => {
           setSelectedTeeBox(null);
         }} 
       />
+
+      <h3>Selected Course: {selectedCourse?.course_name || "No Course Selected"}</h3>
 
       {selectedCourse && (
         <div>
@@ -411,27 +435,20 @@ const updateMatchSetup = (idx, newMatch) => {
       )}
 <h2>Match Setup</h2>
 {matchSetups.map((match, index) => (
-  <div key={index} style={{ border: '1px solid #aaa', padding: '10px', marginBottom: '1rem' }}>
-    <h3>{match.matchLabel}</h3>
-    <label>Match Type:</label>
-
-    <div style={{ marginTop: "0.5rem" }}>
-      <label>
-        <input
-          type="checkbox"
-          checked={match.excludeFromIndividual || false}
-          onChange={(e) => {
-            const updated = [...matchSetups];
-            updated[index].excludeFromIndividual = e.target.checked;
-            setMatchSetups(updated);
-          }}
-        />
-        Exclude this match from the individual leaderboard
-      </label>
-    </div>
-
-    <button
-      style={{ float: "right", color: "red" }}
+  <div
+    key={index}
+    style={{
+      border: '1px solid #aaa',
+      padding: '10px 12px 4px',
+      marginBottom: '1rem',
+      boxSizing: 'border-box',
+      overflow: 'hidden'
+    }}
+  >
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "0.75rem" }}>
+      <h3 style={{ margin: 0 }}>{match.matchLabel}</h3>
+      <button
+      style={{ color: "red", margin: 0 }}
       onClick={() => {
         const updated = matchSetups
           .filter((_, i) => i !== index)
@@ -444,32 +461,37 @@ const updateMatchSetup = (idx, newMatch) => {
       
     >
       ❌ Remove Match
-    </button>
+      </button>
+    </div>
 
-    <select
-      value={match.type}
-      onChange={(e) => {
-        const updated = [...matchSetups];
-        updated[index].type = e.target.value;
+    <div className="match-setup-inline-field">
+      <label>Match Type:</label>
 
-        if (e.target.value === "individualMatch9") {
-          updated[index].team0    ??= "";
-          updated[index].team1    ??= "";
-          updated[index].players  ??= { team0: [], team1: [] };
-          updated[index].pairings ??= {};
-        }
+      <select
+        value={match.type}
+        onChange={(e) => {
+          const updated = [...matchSetups];
+          updated[index].type = e.target.value;
 
-        setMatchSetups(updated);
-      }}
-    >
-      <option value="">Select a match type</option>
-      <option value="stroke">Regular Stroke Play</option>
-      <option value="teamMatch18">Team Match Play (18 holes)</option>
-      <option value="teamMatch9">Team Match Play (Front/Back 9)</option>
-      <option value="individualMatch18">Individual Match Play (18 holes)</option>
-      <option value="individualMatch9">Individual Match Play (Front/Back 9)</option>
-      <option value="stableford">Stableford</option>
-    </select>
+          if (e.target.value === "individualMatch9") {
+            updated[index].team0    ??= "";
+            updated[index].team1    ??= "";
+            updated[index].players  ??= { team0: [], team1: [] };
+            updated[index].pairings ??= {};
+          }
+
+          setMatchSetups(updated);
+        }}
+      >
+        <option value="">Select a match type</option>
+        <option value="stroke">Regular Stroke Play</option>
+        <option value="teamMatch18">Team Match Play (18 holes)</option>
+        <option value="teamMatch9">Team Match Play (Front/Back 9)</option>
+        <option value="individualMatch18">Individual Match Play (18 holes)</option>
+        <option value="individualMatch9">Individual Match Play (Front/Back 9)</option>
+        <option value="stableford">Stableford</option>
+      </select>
+    </div>
 
 
     
@@ -477,33 +499,36 @@ const updateMatchSetup = (idx, newMatch) => {
   <>
     {[0, 1].map((teamIndex) => (
       <div key={teamIndex}>
-        <label>{`Team ${teamIndex + 1}:`}</label>
-        <select
-          value={match.participants?.[`team${teamIndex + 1}`]?.teamName || ""}
-          onChange={(e) => {
-            const updated = [...matchSetups];
-            const teamName = e.target.value;
-            updated[index].participants = {
-              ...updated[index].participants,
-              [`team${teamIndex + 1}`]: {
-                teamName,
-                players: []
-              }
-            };
-            setMatchSetups(updated);
-          }}
-        >
-          <option value="">Select Team</option>
-          {teams.map((t) => (
-            <option key={t.name} value={t.name}>{t.name}</option>
-          ))}
-        </select>
+        <div className="match-setup-inline-field">
+          <label>{`Team ${teamIndex + 1}:`}</label>
+          <select
+            value={match.participants?.[`team${teamIndex + 1}`]?.teamName || ""}
+            onChange={(e) => {
+              const updated = [...matchSetups];
+              const teamName = e.target.value;
+              updated[index].participants = {
+                ...updated[index].participants,
+                [`team${teamIndex + 1}`]: {
+                  teamName,
+                  players: []
+                }
+              };
+              setMatchSetups(updated);
+            }}
+          >
+            <option value="">Select Team</option>
+            {teams.map((t) => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </select>
+        </div>
 
         {/* Player checkboxes */}
         {teams.find(t => t.name === match.participants?.[`team${teamIndex + 1}`]?.teamName)?.players.map((p, pIndex) => (
-          <label key={pIndex} className="checkbox-label">
+          <label key={pIndex} className="checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", width: "fit-content", margin: "4px 0" }}>
           <input
             type="checkbox"
+            style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
             checked={match.participants?.[`team${teamIndex + 1}`]?.players.includes(p.name)}
             onChange={(e) => {
               const updated = [...matchSetups];
@@ -518,7 +543,7 @@ const updateMatchSetup = (idx, newMatch) => {
               setMatchSetups(updated);
             }}
           />
-          {p.name}
+          <span>{formatPlayerOptionLabel(p)}</span>
         </label>
         
         ))}
@@ -530,31 +555,34 @@ const updateMatchSetup = (idx, newMatch) => {
   <>
     {[0, 1].map((teamIndex) => (
       <div key={teamIndex}>
-        <label>{`Team ${teamIndex + 1}:`}</label>
-        <select
-          value={match.participants?.[`team${teamIndex}`]?.teamName || ""}
-          onChange={(e) => {
-            const updated = [...matchSetups];
-            const teamName = e.target.value;
-            if (!updated[index].participants) updated[index].participants = {};
-            updated[index].participants[`team${teamIndex}`] = {
-              teamName,
-              players: []
-            };
-            setMatchSetups(updated);
-          }}
-        >
-          <option value="">Select Team</option>
-          {teams.map((t) => (
-            <option key={t.name} value={t.name}>{t.name}</option>
-          ))}
-        </select>
+        <div className="match-setup-inline-field">
+          <label>{`Team ${teamIndex + 1}:`}</label>
+          <select
+            value={match.participants?.[`team${teamIndex}`]?.teamName || ""}
+            onChange={(e) => {
+              const updated = [...matchSetups];
+              const teamName = e.target.value;
+              if (!updated[index].participants) updated[index].participants = {};
+              updated[index].participants[`team${teamIndex}`] = {
+                teamName,
+                players: []
+              };
+              setMatchSetups(updated);
+            }}
+          >
+            <option value="">Select Team</option>
+            {teams.map((t) => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </select>
+        </div>
 
         {/* Player checkboxes */}
         {teams.find(t => t.name === match.participants?.[`team${teamIndex}`]?.teamName)?.players.map((p, pIndex) => (
-          <label key={pIndex} className="checkbox-label">
+          <label key={pIndex} className="checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", width: "fit-content", margin: "4px 0" }}>
             <input
               type="checkbox"
+              style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
               checked={match.participants?.[`team${teamIndex}`]?.players.includes(p.name)}
               onChange={(e) => {
                 const updated = [...matchSetups];
@@ -569,7 +597,7 @@ const updateMatchSetup = (idx, newMatch) => {
                 setMatchSetups(updated);
               }}
             />
-            {p.name}
+            <span>{formatPlayerOptionLabel(p)}</span>
           </label>
         ))}
       </div>
@@ -668,9 +696,10 @@ const updateMatchSetup = (idx, newMatch) => {
                 const sel = new Set(match[half]?.playersA || []);
 
                 return (
-                  <label key={p.name} style={{ display: "block", paddingLeft: 12 }}>
+                  <label key={p.name} style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: 12, width: "fit-content", margin: "4px 0" }}>
                     <input
                       type="checkbox"
+                      style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
                       checked={sel.has(p.name)}
                       onChange={(e) => {
                         const updated = [...matchSetups];
@@ -682,8 +711,9 @@ const updateMatchSetup = (idx, newMatch) => {
                         updated[index][half].playersA = Array.from(list);
                         setMatchSetups(updated);
                       }}
-                    />{" "}
-                    {p.name}
+                    />
+                    {" "}
+                    <span>{formatPlayerOptionLabel(p)}</span>
                   </label>
                 );
               })}
@@ -720,9 +750,10 @@ const updateMatchSetup = (idx, newMatch) => {
                 const sel = new Set(match[half]?.playersB || []);
 
                 return (
-                  <label key={p.name} style={{ display: "block", paddingLeft: 12 }}>
+                  <label key={p.name} style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: 12, width: "fit-content", margin: "4px 0" }}>
                     <input
                       type="checkbox"
+                      style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
                       checked={sel.has(p.name)}
                       onChange={(e) => {
                         const updated = [...matchSetups];
@@ -734,8 +765,9 @@ const updateMatchSetup = (idx, newMatch) => {
                         updated[index][half].playersB = Array.from(list);
                         setMatchSetups(updated);
                       }}
-                    />{" "}
-                    {p.name}
+                    />
+                    {" "}
+                    <span>{formatPlayerOptionLabel(p)}</span>
                   </label>
                 );
               })}
@@ -759,9 +791,10 @@ const updateMatchSetup = (idx, newMatch) => {
         const isChecked = match.participants?.[player.name] ?? false;
         return (
           <div key={`${team.name}-${idx}`} style={{ marginLeft: "1px" }}>
-            <label className="checkbox-label">
+            <label className="checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", width: "fit-content", margin: "4px 0" }}>
               <input
                 type="checkbox"
+                style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
                 checked={isChecked}
                 onChange={(e) => {
                   const updated = [...matchSetups];
@@ -772,7 +805,7 @@ const updateMatchSetup = (idx, newMatch) => {
                   setMatchSetups(updated);
                 }}
               />
-              {player.name}
+              <span>{formatPlayerOptionLabel(player)}</span>
             </label>
           </div>
         );
@@ -788,9 +821,10 @@ const updateMatchSetup = (idx, newMatch) => {
       <div key={teamIndex}>
         <strong>{team.name}</strong>
         {team.players.map((player, pIndex) => (
-          <label key={pIndex} className="checkbox-label">
+          <label key={pIndex} className="checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", width: "fit-content", margin: "4px 0" }}>
             <input
               type="checkbox"
+              style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
               checked={match.participants?.includes(player.name)}
               onChange={(e) => {
                 const updated = [...matchSetups];
@@ -803,7 +837,7 @@ const updateMatchSetup = (idx, newMatch) => {
                 setMatchSetups(updated);
               }}
             />
-            {player.name}
+            <span>{formatPlayerOptionLabel(player)}</span>
           </label>
         ))}
       </div>
@@ -811,27 +845,52 @@ const updateMatchSetup = (idx, newMatch) => {
   </div>
 )}
 
+  <div style={{ marginTop: "1rem" }}>
+    <label style={{ display: "flex", alignItems: "center", gap: "8px", width: "fit-content", margin: "0 auto" }}>
+      <input
+        type="checkbox"
+        style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
+        checked={match.excludeFromIndividual || false}
+        onChange={(e) => {
+          const updated = [...matchSetups];
+          updated[index].excludeFromIndividual = e.target.checked;
+          setMatchSetups(updated);
+        }}
+      />
+      Exclude this match from the individual leaderboard
+    </label>
+  </div>
+
   </div>
   
 ))}
 
 {matchSetups.length < 20 && (
-  <button onClick={() => {
-    const nextMatchNumber = matchSetups.length + 1;
-    const newMatch = {
-      matchLabel: `Match ${nextMatchNumber}`,
-      type: ""
-    };
-    setMatchSetups([...matchSetups, newMatch]);
-  }}
->
-    ➕ Add Match
-  </button>
+  <div style={{ display: "flex", justifyContent: "center" }}>
+    <button onClick={() => {
+      const nextMatchNumber = matchSetups.length + 1;
+      const newMatch = {
+        matchLabel: `Match ${nextMatchNumber}`,
+        type: ""
+      };
+      setMatchSetups([...matchSetups, newMatch]);
+    }}
+  >
+      ➕ Add Match
+    </button>
+  </div>
 )}
 
 
-<button onClick={addDayToFirebase}>{editingMatchId ? "Update Day" : "Add Day"}</button>
+<div className="setup-actions">
+  <button className="admin-secondary-button" onClick={goBack}>Back to Team Setup</button>
+  <button className="admin-primary-button" onClick={addDayToFirebase}>
+    {editingMatchId ? "Update Day" : "Add Day"}
+  </button>
+</div>
 
+      </div>
+      </section>
     </div>
   );
 }

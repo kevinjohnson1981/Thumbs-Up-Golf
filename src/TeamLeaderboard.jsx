@@ -1,25 +1,25 @@
 // TeamLeaderboard.jsx
 import React, { useEffect, useState } from "react";
 import { db } from "./firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 
 function TeamLeaderboard({ selectedTournamentId }) {
 
   const [teamTotals, setTeamTotals] = useState([]);
   const [days, setDays] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
 
 
   useEffect(() => {
     if (!selectedTournamentId) return;
   
     const fetchScoresAndTeams = async () => {
-      // ✅ Fetch team colors from tournament document
-      const tournamentSnapshot = await getDocs(collection(db, "tournaments"));
-      const tournamentDoc = tournamentSnapshot.docs.find(doc => doc.id === selectedTournamentId);
-      const tournamentData = tournamentDoc?.data();
+      const tournamentRef = doc(db, "tournaments", selectedTournamentId);
+      const tournamentSnapshot = await getDoc(tournamentRef);
+      const tournamentData = tournamentSnapshot.exists() ? tournamentSnapshot.data() : null;
       const teamsFromFirebase = tournamentData?.teams || [];
-      setTeams(teamsFromFirebase); // 🟢 store team color info
+      setTeams(teamsFromFirebase);
   
       // ✅ Fetch scores
       const scoresSnapshot = await getDocs(
@@ -82,47 +82,83 @@ function TeamLeaderboard({ selectedTournamentId }) {
       const sorted = Object.values(teamScores).sort((a, b) => b.total - a.total);
       setDays(dayLabels);
       setTeamTotals(sorted);
+      setLoading(false);
     };
   
     fetchScoresAndTeams();
   }, [selectedTournamentId]);
   
 
+  if (loading) {
+    return (
+      <div className="admin-page-shell leaderboard-page-shell">
+        <section className="admin-hero-card compact player-select-hero">
+          <div className="admin-hero-copy">
+            <h2>Team Leaderboard</h2>
+          </div>
+        </section>
+
+        <section className="admin-section-card leaderboard-section-card">
+          <div className="admin-empty-state">
+            <h4>Loading leaderboard...</h4>
+            <p>Team points are being gathered for this event.</p>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h2>Team Leaderboard</h2>
-      <table className="header-table">
-        <thead>
-          <tr>
-            <th>Team</th>
-            {days.map((day, i) => (
-              <th key={i}>{day}</th>
-            ))}
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {teamTotals.map((team, index) => {
-            const teamColor = teams.find(t => t.name === team.teamName)?.color || "#ccc";
-            const textColor = ["yellow", "orange"].includes(teamColor.toLowerCase()) ? "black" : "white";
+    <div className="admin-page-shell leaderboard-page-shell">
+      <section className="admin-hero-card compact player-select-hero">
+        <div className="admin-hero-copy">
+          <h2>Team Leaderboard</h2>
+        </div>
+      </section>
 
-            return (
-              <tr
-                key={index}
-                style={{ backgroundColor: teamColor, color: textColor }}
-              >
-                <td>{team.teamName}</td>
-                {days.map((day, i) => (
-                  <td key={i}>{team[day] || 0}</td>
-                ))}
-                <td>{team.total}</td>
-              </tr>
-            );
-          })}
-        </tbody>
+      <section className="admin-section-card leaderboard-section-card">
+        {teamTotals.length === 0 ? (
+          <div className="admin-empty-state">
+            <h4>No team scores posted yet</h4>
+            <p>Once team points are saved, the leaderboard will appear here.</p>
+          </div>
+        ) : (
+          <div className="table-wrapper leaderboard-table-wrapper">
+            <table className="header-table leaderboard-table team-leaderboard-table">
+              <thead>
+                <tr>
+                  <th>Pos</th>
+                  <th>Team</th>
+                  {days.map((day, i) => (
+                    <th key={i}>{day}</th>
+                  ))}
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teamTotals.map((team, index) => {
+                  const teamColor = teams.find(t => t.name === team.teamName)?.color || "#ccc";
+                  const textColor = ["yellow", "orange"].includes(teamColor.toLowerCase()) ? "black" : "white";
 
-      </table>
+                  return (
+                    <tr
+                      key={index}
+                      style={{ backgroundColor: teamColor, color: textColor }}
+                    >
+                      <td className="leaderboard-rank-cell">{index + 1}</td>
+                      <td>{team.teamName}</td>
+                      {days.map((day, i) => (
+                        <td key={i} className="team-leaderboard-day-cell">{team[day] || 0}</td>
+                      ))}
+                      <td className="leaderboard-total-cell">{team.total}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

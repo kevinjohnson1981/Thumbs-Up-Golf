@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
-import { onSnapshot } from "firebase/firestore";
 
 function IndividualLeaderboard({ selectedTournamentId, teams = [] }) {
 
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const PAR = 72; // or change if your event uses a different par
+
+  const formatToPar = (value) => {
+    if (value === null || value === undefined || Number.isNaN(value)) return "";
+    if (value === 0) return "E";
+    return `${value > 0 ? "+" : ""}${value}`;
+  };
 
   const getTextColor = (bgColor) => {
     if (!bgColor) return "black";
@@ -128,8 +132,6 @@ function IndividualLeaderboard({ selectedTournamentId, teams = [] }) {
   }, [selectedTournamentId]);
   
 
-  if (loading) return <p>Loading leaderboard...</p>;
-
   const allDates = Array.from(
     new Set(
       leaderboardData.flatMap(p => Object.keys(p.scoresByDay))
@@ -141,48 +143,92 @@ function IndividualLeaderboard({ selectedTournamentId, teams = [] }) {
     label: `Day ${idx + 1}`
   }));
 
+  if (loading) {
+    return (
+      <div className="admin-page-shell leaderboard-page-shell">
+        <section className="admin-hero-card compact player-select-hero">
+          <div className="admin-hero-copy">
+            <h2>Individual Leaderboard</h2>
+          </div>
+        </section>
+
+        <section className="admin-section-card leaderboard-section-card">
+          <div className="admin-empty-state">
+            <h4>Loading leaderboard...</h4>
+            <p>Scores are being gathered for this event.</p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h2>Individual Leaderboard</h2>
-      <table border="1" className="header-table">
-        <thead>
-        <tr>
-          <th>Player</th>
-          {dayLabels.map((day) => (
-            <th key={day.date}>{day.label}</th>
-          ))}
-          <th>Total</th>
-        </tr>
-        </thead>
-        <tbody>
-          {leaderboardData.map((player, idx) => (
-            <tr
-            key={idx}
-            style={{
-              backgroundColor: teamColorMap[player.team] || "",
-              color: getTextColor(teamColorMap[player.team] || "")
-            }}
-          >
-              <td>{player.name}</td>
-              {dayLabels.map((day) => {
-                const score = player.scoresByDay[day.date];
-                return (
-                  <td key={day.date}>
-                    {score
-                      ? `${score.gross} / ${score.net} (${score.netToPar > 0 ? "+" : ""}${score.netToPar})`
-                      : ""}
-                  </td>
-                );
-              })}
+    <div className="admin-page-shell leaderboard-page-shell">
+      <section className="admin-hero-card compact player-select-hero">
+        <div className="admin-hero-copy">
+          <h2>Individual Leaderboard</h2>
+        </div>
+      </section>
 
-              <td>
-                ({player.totalToPar > 0 ? "+" : ""}{player.totalToPar})
-              </td>
-            </tr>
-          ))}
-        </tbody>
+      <section className="admin-section-card leaderboard-section-card">
+        {leaderboardData.length === 0 ? (
+          <div className="admin-empty-state">
+            <h4>No scores posted yet</h4>
+            <p>Once players start entering scores, the leaderboard will appear here.</p>
+          </div>
+        ) : (
+          <>
+            <div className="table-wrapper leaderboard-table-wrapper">
+              <table className="header-table leaderboard-table">
+                <thead>
+                  <tr>
+                    <th>Pos</th>
+                    <th>Player</th>
+                    {dayLabels.map((day) => (
+                      <th key={day.date}>{day.label}</th>
+                    ))}
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboardData.map((player, idx) => (
+                    <tr
+                      key={idx}
+                      className={`leaderboard-row ${idx < 3 ? `leaderboard-row-top-${idx + 1}` : ""}`}
+                      style={{
+                        backgroundColor: teamColorMap[player.team] || "",
+                        color: getTextColor(teamColorMap[player.team] || "")
+                      }}
+                    >
+                      <td className="leaderboard-rank-cell">{idx + 1}</td>
+                      <td>{player.name}</td>
+                      {dayLabels.map((day) => {
+                        const score = player.scoresByDay[day.date];
+                        return (
+                          <td key={day.date} className="leaderboard-day-cell">
+                            {score
+                              ? (
+                                <>
+                                  <span className="leaderboard-day-to-par">{formatToPar(score.netToPar)}</span>
+                                  <span className="leaderboard-day-detail">({score.gross} / {score.net})</span>
+                                </>
+                              )
+                              : ""}
+                          </td>
+                        );
+                      })}
 
-      </table>
+                      <td className="leaderboard-total-cell">
+                        {formatToPar(player.totalToPar)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </section>
     </div>
   );
 }

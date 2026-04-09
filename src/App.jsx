@@ -21,6 +21,12 @@ import PlayerNav from './PlayerNav';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 function App() {
+  const defaultTheme = {
+    backgroundColor: "#e2ddd4",
+    buttonColor: "#8c8170",
+    textColor: "#2f2a24",
+    cardColor: "#f7f2ea"
+  };
   const [view, setView] = useState("adminDashboard");
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -43,48 +49,59 @@ function App() {
   const [selectedLogoFile, setSelectedLogoFile] = useState(null);
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState("defaultGray");
+  const [customTheme, setCustomTheme] = useState(defaultTheme);
   
 
   const themeOptions = {
     defaultGray: {
       label: "Default Gray",
-      backgroundColor: "#afafaf",
-      buttonColor: "#d3d3d3",
-      textColor: "#000000",
-      cardColor: "#afafaf"
+      ...defaultTheme
     },
     classicBlue: {
       label: "America",
-      backgroundColor: "#d44242",
-      buttonColor: "#8f8f8f",
-      textColor: "#3f33c4",
-      cardColor: "#d44242"
+      backgroundColor: "#f3ede2",
+      buttonColor: "#9f2f35",
+      textColor: "#173f6b",
+      cardColor: "#fbf8f2"
     },
     mastersGreen: {
       label: "Masters Green",
-      backgroundColor: "#68ad5a",
-      buttonColor: "#176308",
-      textColor: "#0b3b02",
-      cardColor: "#68ad5a"
+      backgroundColor: "#c7d6b8",
+      buttonColor: "#2f6b2f",
+      textColor: "#1d3a1d",
+      cardColor: "#f4f7ee"
     },
     sunsetGold: {
       label: "Sunset Gold",
-      backgroundColor: "#d18130",
-      buttonColor: "#c4340c",
-      textColor: "#c4340c",
-      cardColor: "#d18130"
+      backgroundColor: "#f2dfc3",
+      buttonColor: "#b85f2e",
+      textColor: "#6f3414",
+      cardColor: "#fbf2e4"
     },
     midnight: {
       label: "Midnight",
-      backgroundColor: "#1f2937",
-      buttonColor: "#4f4f4f",
-      textColor: "#a30000",
-      cardColor: "#1f2937"
+      backgroundColor: "#18212b",
+      buttonColor: "#8f6a3a",
+      textColor: "#f3ead9",
+      cardColor: "#24303c"
+    },
+    custom: {
+      label: "Custom Theme",
+      ...customTheme
     }
   };
 
-  const activeTheme =
-    themeOptions[selectedTournament?.theme || selectedTheme] || themeOptions.defaultGray;
+  const activeTheme = (selectedTournament?.theme || selectedTheme) === "custom"
+    ? { ...defaultTheme, ...customTheme }
+    : (themeOptions[selectedTournament?.theme || selectedTheme] || themeOptions.defaultGray);
+  const shellTheme = isAdmin
+    ? {
+        backgroundColor: "#ddd1bb",
+        buttonColor: "#c38b33",
+        textColor: "#173321",
+        cardColor: "#f5efe3"
+      }
+    : activeTheme;
 
   const defaultLogo = "/ThumbsUpGolf2.png";
 
@@ -134,9 +151,12 @@ function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser && firebaseUser.emailVerified) {
+      if (firebaseUser?.isAnonymous) {
         setUser(firebaseUser);
-        setIsAdmin(true); // ✅ Set admin status here
+        setIsAdmin(false);
+      } else if (firebaseUser && firebaseUser.emailVerified) {
+        setUser(firebaseUser);
+        setIsAdmin(true);
       } else {
         setUser(null);
         setIsAdmin(false);
@@ -154,6 +174,7 @@ function App() {
       setEventCode(selectedTournament.eventCode || "");
       setRules(selectedTournament.rules || "");
       setSelectedTheme(selectedTournament.theme || "defaultGray");
+      setCustomTheme({ ...defaultTheme, ...(selectedTournament.customTheme || {}) });
     }
   }, [selectedTournament]);
   
@@ -185,6 +206,7 @@ function App() {
           setTournamentName(tournaments[0].name);
           setTeams(tournaments[0].teams || []);
           setSelectedTheme(tournaments[0].theme || "defaultGray");
+          setCustomTheme({ ...defaultTheme, ...(tournaments[0].customTheme || {}) });
           setView("adminDashboard");
         }
       } catch (error) {
@@ -206,7 +228,7 @@ useEffect(() => {
 
 // 👤 Guest join (anonymous sign-in w/ event code)
 useEffect(() => {
-  if (!authChecked || isAdmin || !eventCode || user?.emailVerified) return;
+  if (!authChecked || isAdmin || !eventCode || !user?.isAnonymous) return;
   setView("selectMatchDay");
 }, [authChecked, isAdmin, eventCode, user]);
 
@@ -250,6 +272,7 @@ useEffect(() => {
               setTournamentName(tournamentData.name);
               setTeams(tournamentData.teams || []);
               setSelectedTheme(tournamentData.theme || "defaultGray");
+              setCustomTheme({ ...defaultTheme, ...(tournamentData.customTheme || {}) });
               setView("selectMatchDay");
             } else {
               alert("❌ Invalid event code. Please try again.");
@@ -266,18 +289,16 @@ useEffect(() => {
   }
 
   return (
-    <div className="container"
+    <div className="container app-shell"
       style={{
-        backgroundColor: activeTheme.backgroundColor,
-        color: activeTheme.textColor,
-        minHeight: "100vh"
+        color: shellTheme.textColor,
+        minHeight: "100vh",
+        "--theme-bg": shellTheme.backgroundColor,
+        "--theme-accent": shellTheme.buttonColor,
+        "--theme-card": shellTheme.cardColor,
+        "--theme-text": shellTheme.textColor
       }}>
-      <header style={{
-        borderBottom: `5px solid ${activeTheme.buttonColor}`,
-        paddingBottom: "10px",
-        marginBottom: "10px",
-        backgroundColor: activeTheme.cardColor
-      }}>
+      <header className="app-shell-header">
         <div className="app-header">
           <img
             src={headerLogoSrc}
@@ -317,6 +338,8 @@ useEffect(() => {
             };
             setEventCode(defaultCode); // 👈 also set it in state
             setRules("");
+            setSelectedTheme("defaultGray");
+            setCustomTheme(defaultTheme);
 
           
             await setDoc(doc(db, "tournaments", newTournamentId), newTournament);
@@ -332,6 +355,7 @@ useEffect(() => {
             setTournamentName(tournament.name);
             setTeams(tournament.teams || []);
             setSelectedTheme(tournament.theme || "defaultGray");
+            setCustomTheme({ ...defaultTheme, ...(tournament.customTheme || {}) });
             setSetupComplete(true);
             setView("setupOptions");
           }}
@@ -374,6 +398,8 @@ useEffect(() => {
           onRemoveLogo={handleRemoveTournamentLogo}
           selectedTheme={selectedTheme}
           setSelectedTheme={setSelectedTheme}
+          customTheme={customTheme}
+          setCustomTheme={setCustomTheme}
           themeOptions={themeOptions}
           onContinue={async () => {
             let updatedTeams = selectedTournament?.teams || [];
@@ -414,7 +440,8 @@ useEffect(() => {
                 eventCode: code,
                 rules,
                 logoUrl,
-                theme: selectedTheme
+                theme: selectedTheme,
+                customTheme
               });
             
               setSelectedTournament((prev) =>
@@ -427,7 +454,8 @@ useEffect(() => {
                       eventCode: code,
                       rules,
                       logoUrl,
-                      theme: selectedTheme
+                      theme: selectedTheme,
+                      customTheme
                     }
                   : prev
               );
@@ -476,6 +504,7 @@ useEffect(() => {
       {view === "selectMatchDay" && (
         <SelectMatchDay
           tournamentId={selectedTournament?.id}
+          tournamentName={tournamentName}
           onSelectMatchDay={(selectedDate) => {
             setSelectedDate(selectedDate);
             setView("selectMatchType");
@@ -609,7 +638,7 @@ useEffect(() => {
 )}
 
       {user && (
-        <button onClick={() => {
+        <button className="app-logout-button" onClick={() => {
           signOut(auth);
           setUser(null);
           setEventCode(null);

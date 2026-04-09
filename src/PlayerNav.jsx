@@ -5,17 +5,58 @@ import './MapboxMap.css'; // Optional: reuse your map styling
 
 function PlayerNav({ onGoHome, onGoIndividualLeaderboard, onGoTeamLeaderboard, onShowRules, tournamentName }) {
   const [showMap, setShowMap] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <div style={{ padding: "5px", borderBottom: "5px solid #ccc", marginBottom: "10px", background: "" }}>
-      <div style={{ marginBottom: "1px", fontWeight: "bold", fontSize: "1.5em" }}>
-        {tournamentName}
+    <div className="player-nav-shell">
+      <div className="player-nav-title-block">
+        <div className="player-nav-title">
+          {tournamentName}
+        </div>
       </div>
-      <button onClick={onGoHome} style={{ marginRight: "10px" }}>⛳</button>
-      <button onClick={onGoIndividualLeaderboard} style={{ marginRight: "10px" }}>🥇🏌️‍♂️</button>
-      <button onClick={onGoTeamLeaderboard} style={{ marginRight: "10px" }}>🏆🏌️‍♂️🏌️‍♂️🏌️‍♂️</button>
-      <button onClick={onShowRules} style={{ marginRight: "10px" }}>📋 Rules</button>
-      <button onClick={() => setShowMap(true)} style={{ marginRight: "10px" }}>📍 GPS Map</button>
+      <div className="player-nav-actions">
+        <button onClick={onGoHome}>⛳ Home</button>
+        <div className="player-nav-menu-wrap">
+          <button
+            className="player-nav-menu-button"
+            onClick={() => setShowMenu((current) => !current)}
+          >
+            ≡ Menu
+          </button>
+          {showMenu && (
+            <div className="player-nav-menu-panel">
+              <button
+                className="player-nav-menu-item"
+                onClick={() => {
+                  setShowMenu(false);
+                  onGoIndividualLeaderboard();
+                }}
+              >
+                🥇 Individual Leaderboard
+              </button>
+              <button
+                className="player-nav-menu-item"
+                onClick={() => {
+                  setShowMenu(false);
+                  onGoTeamLeaderboard();
+                }}
+              >
+                🏆 Team Leaderboard
+              </button>
+              <button
+                className="player-nav-menu-item"
+                onClick={() => {
+                  setShowMenu(false);
+                  onShowRules();
+                }}
+              >
+                📋 Rules
+              </button>
+            </div>
+          )}
+        </div>
+        <button onClick={() => setShowMap(true)}>📍 GPS Map</button>
+      </div>
 
       {/* ✅ Simple modal for the map */}
       {showMap && (
@@ -28,32 +69,12 @@ function PlayerNav({ onGoHome, onGoIndividualLeaderboard, onGoTeamLeaderboard, o
           justifyContent: "center",
           zIndex: 1000,
         }}>
-          <div style={{
-            background: "#fff",
-            borderRadius: "10px",
-            padding: "20px",
-            width: "90%",
-            maxWidth: "800px",
-            position: "relative"
-          }}>
-            {/* ❌ Close button */}
+          <div className="player-nav-modal">
             <button
+              className="player-nav-modal-close"
               onClick={() => setShowMap(false)}
-              style={{
-                position: "absolute",
-                top: "10px",
-                right: "10px",
-                zIndex: 9999, // ⬅️ This ensures it's above the map
-                fontWeight: "bold",
-                fontSize: "1.2em",
-                background: "#fff",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-                cursor: "pointer",
-                padding: "4px 8px",
-              }}
             >
-              ❌ Close
+              Close
             </button>
 
 
