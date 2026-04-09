@@ -26,7 +26,7 @@ function AdminDashboard({ user, onStartNew, onSelectTournament, onDeleteTourname
       <section className="admin-hero-card">
         <div className="admin-hero-copy">
           <p className="admin-eyebrow">Organizer Dashboard</p>
-          <h2>Welcome back{user?.email ? `, ${user.email}` : ""}</h2>
+          <h2>Welcome back</h2>
           <p>
             Create a new tournament, jump back into an existing weekend, or clean up an old event.
           </p>
