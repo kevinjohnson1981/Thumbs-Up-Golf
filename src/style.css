@@ -579,6 +579,22 @@ input[type=number] {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
+.scorecard-wrapper .narrow-column {
+  width: 28px;
+  min-width: 28px;
+  max-width: 28px;
+}
+
+.scorecard-wrapper .header-table th,
+.scorecard-wrapper .body-table td {
+  padding: 3px 1px;
+}
+
+.scorecard-wrapper .header-table th:nth-child(-n + 4),
+.scorecard-wrapper .body-table td:nth-child(-n + 4) {
+  font-size: 10px;
+}
+
 .header-table {
   width: 100%;
   border: 2px solid black;
@@ -1012,6 +1028,9 @@ input[type=number] {
 
 .admin-hero-card,
 .admin-section-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   border: 1px solid rgba(20, 40, 29, 0.1);
   border-radius: 26px;
   background: color-mix(in srgb, var(--theme-card, #f5efe3) 82%, white 18%);
@@ -1136,6 +1155,9 @@ input[type=number] {
 }
 
 .tournament-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   padding: 20px;
   border-radius: 22px;
   border: 1px solid color-mix(in srgb, var(--theme-accent, #2f7b49) 16%, transparent 84%);
@@ -1211,6 +1233,9 @@ input[type=number] {
 }
 
 .setup-panel {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   height: 100%;
   padding: 22px;
   border-radius: 22px;
@@ -1384,6 +1409,9 @@ input[type=number] {
 }
 
 .team-setup-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   padding: 22px;
   border-radius: 22px;
   border: 1px solid color-mix(in srgb, var(--theme-accent, #2f7b49) 16%, transparent 84%);
@@ -2068,6 +2096,43 @@ input[type=number] {
 }
 
 @media (max-width: 860px) {
+  .admin-page-shell {
+    width: 100%;
+    max-width: 100%;
+    gap: 16px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .admin-hero-card,
+  .admin-section-card,
+  .setup-panel,
+  .tournament-card,
+  .team-setup-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .admin-hero-card,
+  .admin-section-card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .setup-panel,
+  .tournament-card,
+  .team-setup-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .tournament-card-grid,
+  .team-setup-grid,
+  .selection-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .admin-hero-card,
   .admin-section-header,
   .team-setup-card-header,
