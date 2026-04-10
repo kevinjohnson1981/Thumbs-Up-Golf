@@ -143,6 +143,14 @@ const formatPlayerOptionLabel = (player) => {
   return handicap === "" ? player.name : `${player.name} (${handicap})`;
 };
 
+const getIndividualNineBackNinePlayers = (playersA = [], playersB = []) => {
+  if (playersA.length === 2 && playersB.length === 1) {
+    return { playersA: [playersA[1]], playersB };
+  }
+
+  return { playersA, playersB: [...playersB].reverse() };
+};
+
   
 
   const addDayToFirebase = async () => {
@@ -154,16 +162,16 @@ const formatPlayerOptionLabel = (player) => {
     // after the initial tee / date / course checks
     for (const m of matchSetups) {
       if (m.type === "individualMatch9") {
-        // ensure BOTH halves have ≥1 player on each side
-        for (const half of ["front9", "back9"]) {
-          const a = m[half]?.playersA || [];
-          const b = m[half]?.playersB || [];
-          if (a.length === 0 || b.length === 0) {
-            alert(
-              `${m.matchLabel} – ${half}: please choose at least ONE player on each team.`
-            );
-            return;           // stop the save
-          }
+        const a = m.front9?.playersA || [];
+        const b = m.front9?.playersB || [];
+        const isValidIndividualNine =
+          ((a.length === 2 && b.length === 2) ||
+          (a.length === 1 && b.length === 2) ||
+          (a.length === 2 && b.length === 1));
+
+        if (!isValidIndividualNine) {
+          alert(`${m.matchLabel}: please choose two players from at least one team and one or two from the other team.`);
+          return;
         }
       }
     }
@@ -192,7 +200,13 @@ const formatPlayerOptionLabel = (player) => {
         };
       
         const f9 = match.front9 || {};
-        const b9 = match.back9  || {};
+        const generatedBack9 = getIndividualNineBackNinePlayers(f9.playersA, f9.playersB);
+        const b9 = {
+          teamA: f9.teamA || "",
+          playersA: generatedBack9.playersA,
+          teamB: f9.teamB || "",
+          playersB: generatedBack9.playersB
+        };
       
         return {
           matchLabel: match.matchLabel,
@@ -656,127 +670,107 @@ const formatPlayerOptionLabel = (player) => {
 
 
 
-{match.type === "individualMatch9" && (
-  <>
-    {["front9", "back9"].map((half) => {
-      const nicerName = half === "front9" ? "Front 9" : "Back 9";
+{match.type === "individualMatch9" && (() => {
+  const selectedTeamA = teams.find((t) => t.name === match.front9?.teamA);
+  const selectedTeamB = teams.find((t) => t.name === match.front9?.teamB);
+  const playersA = match.front9?.playersA || [];
+  const playersB = match.front9?.playersB || [];
+  const back9Players = getIndividualNineBackNinePlayers(playersA, playersB);
+  const makePreviewPairs = (aPlayers = [], bPlayers = []) => aPlayers
+    .map((playerA, playerIndex) => bPlayers[playerIndex] ? `${playerA} vs ${bPlayers[playerIndex]}` : null)
+    .filter(Boolean);
+  const front9PreviewPairs = makePreviewPairs(playersA, playersB);
+  const back9PreviewPairs = makePreviewPairs(back9Players.playersA, back9Players.playersB);
+  const hasValidIndividualNineSelection =
+    (playersA.length === 2 && playersB.length === 2) ||
+    (playersA.length === 1 && playersB.length === 2) ||
+    (playersA.length === 2 && playersB.length === 1);
 
-      return (
-        <div key={half} style={{ border: "1px solid #ddd", padding: 10, marginTop: 12 }}>
-          <h4 style={{ margin: 0 }}>{nicerName}</h4>
+  const updateIndividual9Team = (side, teamName) => {
+    const updated = [...matchSetups];
+    updated[index].front9 ??= { playersA: [], playersB: [] };
+    updated[index].front9[side === "A" ? "teamA" : "teamB"] = teamName;
+    updated[index].front9[side === "A" ? "playersA" : "playersB"] = [];
+    delete updated[index].back9;
+    setMatchSetups(updated);
+  };
 
-          {/* ─── TEAM-A selector ─── */}
-          <div style={{ marginTop: 6 }}>
-            <label>
-              
+  const toggleIndividual9Player = (side, playerName, checked) => {
+    const updated = [...matchSetups];
+    updated[index].front9 ??= { playersA: [], playersB: [] };
+    const key = side === "A" ? "playersA" : "playersB";
+    const selected = updated[index].front9[key] || [];
+
+    updated[index].front9[key] = checked
+      ? selected.length < 2
+        ? [...selected, playerName]
+        : selected
+      : selected.filter((name) => name !== playerName);
+
+    delete updated[index].back9;
+    setMatchSetups(updated);
+  };
+
+  return (
+    <div className="individual-nine-builder">
+      <h4>Individual Match Play Pairings</h4>
+      <p className="setup-help-text">
+        Pick two teams, then choose either two players from each team or a 1-vs-2 group. The back nine matchups will switch automatically.
+      </p>
+
+      {["A", "B"].map((side) => {
+        const teamKey = side === "A" ? "teamA" : "teamB";
+        const selectedTeam = side === "A" ? selectedTeamA : selectedTeamB;
+        const selectedPlayers = side === "A" ? playersA : playersB;
+
+        return (
+          <div key={side} className="individual-nine-team-picker">
+            <div className="match-setup-inline-field">
+              <label>{`Team ${side}:`}</label>
               <select
-                value={match[half]?.teamA || ""}
-                onChange={(e) => {
-                  const updated = [...matchSetups];
-                  updated[index][half] ??= {};
-                  updated[index][half].teamA = e.target.value;
-                  // reset players when team changes
-                  updated[index][half].playersA = [];
-                  setMatchSetups(updated);
-                }}
+                value={match.front9?.[teamKey] || ""}
+                onChange={(e) => updateIndividual9Team(side, e.target.value)}
               >
-                <option value="">Select team…</option>
+                <option value="">Select team...</option>
                 {teams.map((t) => (
                   <option key={t.name} value={t.name}>
                     {t.name}
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
 
-            
-            {teams
-              .find((t) => t.name === match[half]?.teamA)
-              ?.players.map((p) => {
-                const sel = new Set(match[half]?.playersA || []);
+            {selectedTeam?.players?.map((p) => {
+              const isChecked = selectedPlayers.includes(p.name);
+              const isDisabled = !isChecked && selectedPlayers.length >= 2;
 
-                return (
-                  <label key={p.name} style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: 12, width: "fit-content", margin: "4px 0" }}>
-                    <input
-                      type="checkbox"
-                      style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
-                      checked={sel.has(p.name)}
-                      onChange={(e) => {
-                        const updated = [...matchSetups];
-                        updated[index][half] ??= { playersA: [], playersB: [] };
-
-                        const list = new Set(updated[index][half].playersA);
-                        e.target.checked ? list.add(p.name) : list.delete(p.name);
-
-                        updated[index][half].playersA = Array.from(list);
-                        setMatchSetups(updated);
-                      }}
-                    />
-                    {" "}
-                    <span>{formatPlayerOptionLabel(p)}</span>
-                  </label>
-                );
-              })}
-
-
-            <hr style={{ margin: "8px 0" }} />
-
-            {/* ─── TEAM-B selector ─── */}
-            <label>
-             
-              <select
-                value={match[half]?.teamB || ""}
-                onChange={(e) => {
-                  const updated = [...matchSetups];
-                  updated[index][half] ??= {};
-                  updated[index][half].teamB = e.target.value;
-                  updated[index][half].playersB = [];
-                  setMatchSetups(updated);
-                }}
-              >
-                <option value="">Select team…</option>
-                {teams.map((t) => (
-                  <option key={t.name} value={t.name}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {/* Check-boxes for Team-B players */}
-            {teams
-              .find((t) => t.name === match[half]?.teamB)
-              ?.players.map((p) => {
-                const sel = new Set(match[half]?.playersB || []);
-
-                return (
-                  <label key={p.name} style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: 12, width: "fit-content", margin: "4px 0" }}>
-                    <input
-                      type="checkbox"
-                      style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
-                      checked={sel.has(p.name)}
-                      onChange={(e) => {
-                        const updated = [...matchSetups];
-                        updated[index][half] ??= { playersA: [], playersB: [] };
-
-                        const list = new Set(updated[index][half].playersB);
-                        e.target.checked ? list.add(p.name) : list.delete(p.name);
-
-                        updated[index][half].playersB = Array.from(list);
-                        setMatchSetups(updated);
-                      }}
-                    />
-                    {" "}
-                    <span>{formatPlayerOptionLabel(p)}</span>
-                  </label>
-                );
-              })}
+              return (
+                <label key={p.name} className="checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", width: "fit-content", margin: "4px 0" }}>
+                  <input
+                    type="checkbox"
+                    style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
+                    checked={isChecked}
+                    disabled={isDisabled}
+                    onChange={(e) => toggleIndividual9Player(side, p.name, e.target.checked)}
+                  />
+                  <span>{formatPlayerOptionLabel(p)}</span>
+                </label>
+              );
+            })}
           </div>
+        );
+      })}
+
+      {hasValidIndividualNineSelection && (
+        <div className="individual-nine-preview">
+          <strong>Generated matchups</strong>
+          <span>Front 9: {front9PreviewPairs.join(" | ")}</span>
+          <span>Back 9: {back9PreviewPairs.join(" | ")}</span>
         </div>
-      );
-    })}
-  </>
-)}
+      )}
+    </div>
+  );
+})()}
 
 
 

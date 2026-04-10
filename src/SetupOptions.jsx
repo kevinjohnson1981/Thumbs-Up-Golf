@@ -105,7 +105,7 @@ function SetupOptions({
                   id="event-code"
                   type="text"
                   value={eventCode ?? ""}
-                  onChange={(e) => setEventCode(e.target.value.toUpperCase())}
+                  onChange={(e) => setEventCode(e.target.value)}
                   placeholder="Leave blank for auto-generated"
                 />
                 <p className="setup-help-text">

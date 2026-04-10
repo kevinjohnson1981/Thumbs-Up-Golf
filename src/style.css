@@ -2063,6 +2063,33 @@ input[type=number] {
   margin: 0;
 }
 
+.individual-nine-builder {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #2f7b49) 14%, transparent 86%);
+  background: color-mix(in srgb, var(--theme-card, #f5efe3) 54%, white 46%);
+}
+
+.individual-nine-builder h4 {
+  margin: 0;
+}
+
+.individual-nine-team-picker {
+  margin-top: 12px;
+}
+
+.individual-nine-preview {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--theme-bg, #ddd1bb) 30%, white 70%);
+  color: var(--theme-text, #173321);
+  font-size: 0.9rem;
+}
+
 .match-planner-page .tournament-card {
   padding: 10px 12px;
 }
