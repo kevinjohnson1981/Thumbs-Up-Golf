@@ -10,6 +10,35 @@ function TeamLeaderboard({ selectedTournamentId }) {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const getTextColor = (bgColor) => {
+    if (!bgColor) return "#000000";
+
+    const namedColors = {
+      red: "#ff0000",
+      blue: "#0000ff",
+      green: "#008000",
+      purple: "#800080",
+      orange: "#ffa500",
+      black: "#000000",
+      yellow: "#ffff00",
+      gold: "#ffd700",
+      white: "#ffffff",
+      gray: "#808080",
+      grey: "#808080",
+    };
+
+    const normalized = namedColors[bgColor.toLowerCase()] || bgColor;
+    const hex = normalized.replace("#", "");
+    if (hex.length !== 6) return "#000000";
+
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+    return brightness > 150 ? "#000000" : "#ffffff";
+  };
+
 
   useEffect(() => {
     if (!selectedTournamentId) return;
@@ -138,17 +167,20 @@ function TeamLeaderboard({ selectedTournamentId }) {
               <tbody>
                 {teamTotals.map((team, index) => {
                   const teamColor = teams.find(t => t.name === team.teamName)?.color || "#ccc";
-                  const textColor = ["yellow", "orange"].includes(teamColor.toLowerCase()) ? "black" : "white";
+                  const textColor = getTextColor(teamColor);
 
                   return (
                     <tr
                       key={index}
+                      className="leaderboard-row"
                       style={{ backgroundColor: teamColor, color: textColor }}
                     >
                       <td className="leaderboard-rank-cell">{index + 1}</td>
                       <td>{team.teamName}</td>
                       {days.map((day, i) => (
-                        <td key={i} className="team-leaderboard-day-cell">{team[day] || 0}</td>
+                        <td key={i} className="team-leaderboard-day-cell">
+                          <span className="leaderboard-day-to-par">{team[day] || 0}</span>
+                        </td>
                       ))}
                       <td className="leaderboard-total-cell">{team.total}</td>
                     </tr>

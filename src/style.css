@@ -1884,18 +1884,18 @@ input[type=number] {
 .leaderboard-table th,
 .leaderboard-table td {
   padding: 12px 10px;
-  border: 1px solid color-mix(in srgb, var(--theme-accent, #2f7b49) 10%, transparent 90%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
 }
 
 .leaderboard-table td {
   font-size: 0.9rem;
   line-height: 1.25;
-  font-weight: 700;
+  font-weight: 650;
 }
 
 .leaderboard-table td:nth-child(2) {
-  font-size: 0.86rem;
-  font-weight: 800;
+  font-size: 0.9rem;
+  font-weight: 650;
   letter-spacing: 0.01em;
 }
 
@@ -1906,12 +1906,12 @@ input[type=number] {
 .leaderboard-rank-cell {
   width: 30px;
   text-align: center;
-  font-weight: 800;
+  font-weight: 650;
 }
 
 .leaderboard-total-cell {
-  font-size: 0.94rem;
-  font-weight: 800;
+  font-size: 0.9rem;
+  font-weight: 650;
   letter-spacing: 0.01em;
   padding-left: 4px;
   padding-right: 4px;
@@ -1923,8 +1923,8 @@ input[type=number] {
 
 .leaderboard-day-to-par {
   display: block;
-  font-size: 0.88rem;
-  font-weight: 800;
+  font-size: 0.9rem;
+  font-weight: 650;
   line-height: 1.1;
 }
 
@@ -1935,8 +1935,8 @@ input[type=number] {
 }
 
 .team-leaderboard-table td:nth-child(2) {
-  font-size: 0.86rem;
-  font-weight: 800;
+  font-size: 0.9rem;
+  font-weight: 650;
   letter-spacing: 0.01em;
 }
 
@@ -1948,8 +1948,8 @@ input[type=number] {
 }
 
 .team-leaderboard-day-cell {
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: 0.9rem;
+  font-weight: 650;
 }
 
 .match-planner-page .setup-panel {

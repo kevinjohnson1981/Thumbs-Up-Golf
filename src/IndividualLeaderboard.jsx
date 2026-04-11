@@ -14,10 +14,32 @@ function IndividualLeaderboard({ selectedTournamentId, teams = [] }) {
   };
 
   const getTextColor = (bgColor) => {
-    if (!bgColor) return "black";
+    if (!bgColor) return "#000000";
 
-    const lightColors = ["yellow", "gold", "#ffff00", "#ffd700", "lightyellow"];
-    return lightColors.includes(bgColor.toLowerCase()) ? "black" : "white";
+    const namedColors = {
+      red: "#ff0000",
+      blue: "#0000ff",
+      green: "#008000",
+      purple: "#800080",
+      orange: "#ffa500",
+      black: "#000000",
+      yellow: "#ffff00",
+      gold: "#ffd700",
+      white: "#ffffff",
+      gray: "#808080",
+      grey: "#808080",
+    };
+
+    const normalized = namedColors[bgColor.toLowerCase()] || bgColor;
+    const hex = normalized.replace("#", "");
+    if (hex.length !== 6) return "#000000";
+
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+    return brightness > 150 ? "#000000" : "#ffffff";
   };
 
   const teamColorMap = {};
