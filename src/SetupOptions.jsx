@@ -5,6 +5,8 @@ function SetupOptions({
   setTournamentName,
   numTeams,
   setNumTeams,
+  numPlayers,
+  setNumPlayers,
   playersPerTeam,
   setPlayersPerTeam,
   eventCode,
@@ -15,6 +17,7 @@ function SetupOptions({
   setSelectedLogoFile,
   currentLogoUrl,
   onRemoveLogo,
+  eventFormat,
   selectedTheme,
   setSelectedTheme,
   customTheme,
@@ -47,7 +50,11 @@ function SetupOptions({
         <div className="admin-hero-copy">
           <p className="admin-eyebrow">Tournament Setup</p>
           <h2>Build the basics for your weekend</h2>
-          <p>Name the event, set team sizes, choose the look, and add the notes players need.</p>
+          <p>
+            {eventFormat === "individual"
+              ? "Set up the event details for your individual tournament before building the player field."
+              : "Name the event, set team sizes, choose the look, and add the notes players need."}
+          </p>
         </div>
       </section>
 
@@ -58,6 +65,10 @@ function SetupOptions({
               <div className="setup-panel-header">
                 <h3>Event details</h3>
                 <p>Start with the core information players and admins will see throughout the app.</p>
+              </div>
+
+              <div className="setup-format-pill">
+                {eventFormat === "individual" ? "Individual Event" : "Team Event"}
               </div>
 
               <div className="setup-field-group">
@@ -71,33 +82,48 @@ function SetupOptions({
                 />
               </div>
 
-              <div className="setup-split-fields">
+              {eventFormat === "individual" ? (
                 <div className="setup-field-group">
-                  <label htmlFor="numTeams">Number of Teams</label>
+                  <label htmlFor="numPlayers">Number of Players</label>
                   <select
-                    id="numTeams"
-                    value={numTeams}
-                    onChange={(e) => setNumTeams(parseInt(e.target.value, 10))}
+                    id="numPlayers"
+                    value={numPlayers}
+                    onChange={(e) => setNumPlayers(parseInt(e.target.value, 10))}
                   >
-                    {[2, 3, 4].map((n) => (
+                    {Array.from({ length: 31 }, (_, index) => index + 2).map((n) => (
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </select>
                 </div>
+              ) : (
+                <div className="setup-split-fields">
+                  <div className="setup-field-group">
+                    <label htmlFor="numTeams">Number of Teams</label>
+                    <select
+                      id="numTeams"
+                      value={numTeams}
+                      onChange={(e) => setNumTeams(parseInt(e.target.value, 10))}
+                    >
+                      {[2, 3, 4].map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                <div className="setup-field-group">
-                  <label htmlFor="playersPerTeam">Players Per Team</label>
-                  <select
-                    id="playersPerTeam"
-                    value={playersPerTeam}
-                    onChange={(e) => setPlayersPerTeam(parseInt(e.target.value, 10))}
-                  >
-                    {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
-                  </select>
+                  <div className="setup-field-group">
+                    <label htmlFor="playersPerTeam">Players Per Team</label>
+                    <select
+                      id="playersPerTeam"
+                      value={playersPerTeam}
+                      onChange={(e) => setPlayersPerTeam(parseInt(e.target.value, 10))}
+                    >
+                      {[2, 3, 4, 5, 6, 7, 8].map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="setup-field-group">
                 <label htmlFor="event-code">Event Code</label>
@@ -262,7 +288,7 @@ function SetupOptions({
             </button>
           )}
           <button type="button" className="admin-primary-button" onClick={onContinue}>
-            Continue to Team Setup
+            {eventFormat === "individual" ? "Continue to Player Setup" : "Continue to Team Setup"}
           </button>
         </div>
       </section>

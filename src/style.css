@@ -1147,6 +1147,28 @@ input[type=number] {
   margin-bottom: 18px;
 }
 
+.admin-hero-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.admin-hero-actions .admin-primary-button,
+.admin-hero-actions .admin-secondary-button {
+  padding: 9px 12px;
+  font-size: 0.82rem;
+  background: color-mix(in srgb, var(--theme-card, #f5efe3) 68%, white 32%);
+  color: var(--theme-text, #173321);
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #2f7b49) 24%, transparent 76%);
+  white-space: nowrap;
+}
+
+.admin-hero-actions .admin-primary-button:hover,
+.admin-hero-actions .admin-secondary-button:hover {
+  background: color-mix(in srgb, var(--theme-card, #f5efe3) 80%, white 20%);
+}
+
 .admin-count-pill {
   min-width: 42px;
   padding: 8px 12px;
@@ -1220,6 +1242,20 @@ input[type=number] {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 18px;
+}
+
+.setup-format-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-bg, #ddd1bb) 28%, white 72%);
+  color: var(--theme-text, #173321);
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .admin-empty-state {
@@ -1415,6 +1451,11 @@ input[type=number] {
   gap: 18px;
 }
 
+.player-setup-grid {
+  display: grid;
+  gap: 18px;
+}
+
 .team-setup-card {
   box-sizing: border-box;
   width: 100%;
@@ -1528,6 +1569,53 @@ input[type=number] {
 .player-info-row.polished .player-handicap-input {
   text-align: center;
   justify-self: stretch;
+}
+
+.player-setup-grid-header {
+  grid-template-columns: minmax(0, 1fr) 96px 72px;
+}
+
+.player-setup-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 78px;
+  gap: 10px;
+  align-items: center;
+}
+
+.player-setup-row .player-name-input,
+.player-setup-row .player-handicap-input {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 0;
+}
+
+.player-setup-row .player-name-input,
+.player-setup-row .player-handicap-input {
+  height: 42px;
+}
+
+.player-setup-color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.player-setup-color-row label {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #254230;
+}
+
+.player-setup-remove-button {
+  margin-left: auto;
+}
+
+.player-setup-add-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
 }
 
 .app-shell {
@@ -1872,6 +1960,15 @@ input[type=number] {
   max-width: 48px;
 }
 
+.leaderboard-table th.leaderboard-metric-column,
+.leaderboard-table td.leaderboard-metric-column {
+  width: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
 .leaderboard-table thead th {
   background: linear-gradient(180deg, #29573a, #1f442d);
   color: #f6f1e7;
@@ -2090,6 +2187,62 @@ input[type=number] {
   font-size: 0.9rem;
 }
 
+.individual-match-card {
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #2f7b49) 16%, transparent 84%);
+  border-radius: 18px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: color-mix(in srgb, var(--theme-card, #f5efe3) 54%, white 46%);
+}
+
+.individual-match-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.individual-match-card-header h3 {
+  margin: 0;
+}
+
+.individual-participant-block,
+.individual-pairings-block {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.individual-pairing-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.individual-hole-editor {
+  margin: 16px 0 20px;
+}
+
+.individual-hole-table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 650px;
+  margin-bottom: 12px;
+}
+
+.individual-hole-table th,
+.individual-hole-table td {
+  text-align: left;
+  padding: 6px 8px;
+}
+
+.individual-hole-table input {
+  width: 84px;
+  margin: 0;
+}
+
 .match-planner-page .tournament-card {
   padding: 10px 12px;
 }
@@ -2180,6 +2333,7 @@ input[type=number] {
 
   .tournament-card-grid,
   .team-setup-grid,
+  .player-setup-grid,
   .selection-card-grid,
   .setup-form-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -2196,11 +2350,32 @@ input[type=number] {
     align-items: center;
   }
 
+  .admin-hero-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
   .setup-form-grid,
   .setup-split-fields,
   .player-info-row.polished,
-  .custom-theme-grid {
+  .custom-theme-grid,
+  .player-setup-grid-header {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .player-setup-row {
+    grid-template-columns: minmax(0, 1fr) 78px;
+  }
+
+  .individual-pairing-row,
+  .individual-match-card-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .individual-hole-table {
+    display: block;
+    overflow-x: auto;
   }
 
   .admin-primary-button,

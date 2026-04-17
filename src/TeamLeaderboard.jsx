@@ -1,7 +1,7 @@
 // TeamLeaderboard.jsx
 import React, { useEffect, useState } from "react";
 import { db } from "./firebase";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, onSnapshot } from "firebase/firestore";
 
 function TeamLeaderboard({ selectedTournamentId }) {
 
@@ -41,80 +41,102 @@ function TeamLeaderboard({ selectedTournamentId }) {
 
 
   useEffect(() => {
-    if (!selectedTournamentId) return;
-  
-    const fetchScoresAndTeams = async () => {
-      const tournamentRef = doc(db, "tournaments", selectedTournamentId);
-      const tournamentSnapshot = await getDoc(tournamentRef);
-      const tournamentData = tournamentSnapshot.exists() ? tournamentSnapshot.data() : null;
-      const teamsFromFirebase = tournamentData?.teams || [];
-      setTeams(teamsFromFirebase);
-  
-      // ✅ Fetch scores
-      const scoresSnapshot = await getDocs(
-        collection(db, "tournaments", selectedTournamentId, "scores")
-      );
-  
+    if (!selectedTournamentId) {
+      setTeamTotals([]);
+      setDays([]);
+      setTeams([]);
+      setLoading(false);
+      return undefined;
+    }
+
+    setLoading(true);
+
+    const rebuildTeamLeaderboard = (scoreDocs = []) => {
       const scoresByDate = {};
-  
-      scoresSnapshot.forEach(doc => {
-        const data = doc.data();
-        const matchId = doc.id;
-        const [_, date] = matchId.split("_");
-  
+
+      scoreDocs.forEach((scoreDoc) => {
+        const data = scoreDoc.data();
+        const matchId = scoreDoc.id;
+        const [, date] = matchId.split("_");
+
         if (!scoresByDate[date]) {
           scoresByDate[date] = [];
         }
-  
+
         if (data.teamPoints) {
           scoresByDate[date].push(data.teamPoints);
         }
       });
-  
-      // ✅ Organize and total scores
+
       const teamScores = {};
       const sortedDates = Object.keys(scoresByDate).sort();
-      const dayLabels = sortedDates.map((date, idx) => `Day ${idx + 1}`);
-  
-      sortedDates.forEach((date, idx) => {
+      const dayLabels = sortedDates.map((date, index) => `Day ${index + 1}`);
+
+      sortedDates.forEach((date, index) => {
         const matches = scoresByDate[date];
-        const dayLabel = `Day ${idx + 1}`;
-  
-        matches.forEach(teamPoints => {
+        const dayLabel = `Day ${index + 1}`;
+
+        matches.forEach((teamPoints) => {
           Object.entries(teamPoints).forEach(([teamName, pointsObj]) => {
             if (!teamScores[teamName]) {
               teamScores[teamName] = { teamName, total: 0 };
             }
-  
+
             let dayTotal = 0;
-            if (typeof pointsObj.total === 'number') {
+            if (typeof pointsObj.total === "number") {
               dayTotal = pointsObj.total;
             } else if (
-              typeof pointsObj.front9 === 'number' ||
-              typeof pointsObj.back9 === 'number'
+              typeof pointsObj.front9 === "number" ||
+              typeof pointsObj.back9 === "number"
             ) {
-              const front = typeof pointsObj.front9 === 'number' ? pointsObj.front9 : 0;
-              const back = typeof pointsObj.back9 === 'number' ? pointsObj.back9 : 0;
+              const front = typeof pointsObj.front9 === "number" ? pointsObj.front9 : 0;
+              const back = typeof pointsObj.back9 === "number" ? pointsObj.back9 : 0;
               dayTotal = front + back;
             }
-  
+
             if (!teamScores[teamName][dayLabel]) {
               teamScores[teamName][dayLabel] = 0;
             }
-  
+
             teamScores[teamName][dayLabel] += dayTotal;
             teamScores[teamName].total += dayTotal;
           });
         });
       });
-  
+
       const sorted = Object.values(teamScores).sort((a, b) => b.total - a.total);
       setDays(dayLabels);
       setTeamTotals(sorted);
       setLoading(false);
     };
-  
-    fetchScoresAndTeams();
+
+    const unsubscribeTournament = onSnapshot(
+      doc(db, "tournaments", selectedTournamentId),
+      (snapshot) => {
+        const tournamentData = snapshot.exists() ? snapshot.data() : null;
+        setTeams(tournamentData?.teams || []);
+      },
+      (error) => {
+        console.error("Error listening to tournament teams:", error);
+        setLoading(false);
+      }
+    );
+
+    const unsubscribeScores = onSnapshot(
+      collection(db, "tournaments", selectedTournamentId, "scores"),
+      (snapshot) => {
+        rebuildTeamLeaderboard(snapshot.docs);
+      },
+      (error) => {
+        console.error("Error listening to team scores:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      unsubscribeTournament();
+      unsubscribeScores();
+    };
   }, [selectedTournamentId]);
   
 
