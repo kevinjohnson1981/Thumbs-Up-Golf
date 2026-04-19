@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import { useRef } from "react";
 
-function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMatch, setScoresInApp, setTeamPointsInApp, teamPoints, teams = [], individualPlayers = [], eventFormat = "team" }) {
+function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMatch, setScoresInApp, setTeamPointsInApp, teamPoints, teams = [] }) {
 
   const [matchData, setMatchData] = useState(null);
   const [localPlayers, setLocalPlayers] = useState([]);
@@ -35,17 +35,6 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   };
 
   const getPlayerTeamFromTournament = (playerName) => {
-    if (eventFormat === "individual") {
-      const player = individualPlayers.find((entry) => entry.name === playerName);
-      return player
-        ? {
-            name: player.name,
-            color: player.color || "#8c8170",
-            players: [player],
-          }
-        : null;
-    }
-
     return teams.find((team) =>
       team.players?.some((p) => p.name === playerName)
     ) || null;
@@ -290,11 +279,7 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
   
     if (matchType === "strokePlay" || matchType === "stroke") {
-      const entries = Array.isArray(selectedMatch.players)
-        ? selectedMatch.players
-        : Array.isArray(selectedMatch.participants)
-        ? selectedMatch.participants
-        : Object.keys(selectedMatch.participants || {});
+      const entries = selectedMatch.players || Object.keys(selectedMatch.participants || {});
     
       const allPlayers = entries.map((entry) => {
         const playerName = typeof entry === "string" ? entry : entry.name;
@@ -633,10 +618,6 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   };
 
   const getTeamNameFromMatchData = (playerName) => {
-    if (eventFormat === "individual") {
-      return playerName;
-    }
-
     const team = matchData?.teams?.find((t) =>
       t.players.some((p) => p.name === playerName)
     );

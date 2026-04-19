@@ -73,25 +73,6 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
       const team0Players = matchObj.participants?.team0?.players || [];
       const team1Players = matchObj.participants?.team1?.players || [];
       players = [...team0Players, ...team1Players].map(name => ({ name }));
-    } else if (matchObj.type === "stroke") {
-      players = (matchObj.players || matchObj.participants || []).map((entry) => ({
-        name: typeof entry === "string" ? entry : entry.name,
-      }));
-    } else if (matchObj.type === "individualMatch18") {
-      players = (matchObj.pairings || [])
-        .flatMap((pair) => [pair.playerA, pair.playerB])
-        .filter(Boolean)
-        .map((name) => ({ name }));
-    } else if (matchObj.type === "individualMatch9") {
-      players = [
-        ...(matchObj.front9?.playersA || []),
-        ...(matchObj.front9?.playersB || []),
-        ...(matchObj.back9?.playersA || []),
-        ...(matchObj.back9?.playersB || []),
-      ]
-        .filter(Boolean)
-        .filter((name, index, values) => values.indexOf(name) === index)
-        .map((name) => ({ name }));
     }
     
   
@@ -129,8 +110,6 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
 
           const strokePlayPlayers = Array.isArray(match.players)
             ? match.players.map(p => (typeof p === "string" ? p : p.name))
-            : Array.isArray(match.participants)
-            ? match.participants.map(p => (typeof p === "string" ? p : p.name))
             : typeof match.participants === 'object'
             ? Object.keys(match.participants)
             : [];

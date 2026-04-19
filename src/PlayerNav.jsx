@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import MapboxDistanceMap from './MapboxDistanceMap'; // 👈 Make sure this is correct
 import './MapboxMap.css'; // Optional: reuse your map styling
 
-function PlayerNav({ onGoHome, onGoIndividualLeaderboard, onGoTeamLeaderboard, onShowRules, tournamentName, showTeamLeaderboard = true }) {
+function PlayerNav({ onGoHome, onGoIndividualLeaderboard, onGoTeamLeaderboard, onShowRules, tournamentName }) {
   const [showMap, setShowMap] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -34,17 +34,15 @@ function PlayerNav({ onGoHome, onGoIndividualLeaderboard, onGoTeamLeaderboard, o
               >
                 🥇 Individual Leaderboard
               </button>
-              {showTeamLeaderboard && (
-                <button
-                  className="player-nav-menu-item"
-                  onClick={() => {
-                    setShowMenu(false);
-                    onGoTeamLeaderboard();
-                  }}
-                >
-                  🏆 Team Leaderboard
-                </button>
-              )}
+              <button
+                className="player-nav-menu-item"
+                onClick={() => {
+                  setShowMenu(false);
+                  onGoTeamLeaderboard();
+                }}
+              >
+                🏆 Team Leaderboard
+              </button>
               <button
                 className="player-nav-menu-item"
                 onClick={() => {
