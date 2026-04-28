@@ -9,7 +9,9 @@ import { signOut } from "firebase/auth";
 import AdminDashboard from './AdminDashboard';
 import SetupOptions from './SetupOptions';
 import TeamSetup from './TeamSetup';
+import PlayerSetup from './PlayerSetup';
 import MatchPlanner from './MatchPlanner';
+import IndividualMatchPlanner from './IndividualMatchPlanner';
 import { collection, query, where, getDocs } from "firebase/firestore";
 import SelectMatchDay from './SelectMatchDay';
 import SelectMatchType from './SelectMatchType';
@@ -34,9 +36,12 @@ function App() {
   const [eventCode, setEventCode] = useState("");
   const [rules, setRules] = useState("");
   const [teams, setTeams] = useState([]);
+  const [individualPlayers, setIndividualPlayers] = useState([]);
+  const [eventFormat, setEventFormat] = useState("team");
   const [tournamentName, setTournamentName] = useState("");
   const [numTeams, setNumTeams] = useState(2);
   const [playersPerTeam, setPlayersPerTeam] = useState(3);
+  const [numPlayers, setNumPlayers] = useState(4);
   const [setupComplete, setSetupComplete] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -150,6 +155,40 @@ function App() {
     }
   };
 
+  const startNewTournament = async (format) => {
+    const newTournamentId = `${user.uid}_${Date.now()}`;
+    const defaultCode = generateDefaultCode();
+    const newTournament = {
+      id: newTournamentId,
+      adminId: user.uid,
+      eventFormat: format,
+      name: "",
+      teams: [],
+      players: [],
+      numTeams: 2,
+      playersPerTeam: 3,
+      numPlayers: 4,
+      eventCode: defaultCode,
+      rules: "",
+      createdAt: new Date().toISOString(),
+    };
+
+    setEventFormat(format);
+    setEventCode(defaultCode);
+    setRules("");
+    setSelectedTheme("defaultGray");
+    setCustomTheme(defaultTheme);
+
+    await setDoc(doc(db, "tournaments", newTournamentId), newTournament);
+    setTournamentName("");
+    setTeams([]);
+    setIndividualPlayers([]);
+    setNumPlayers(4);
+    setSelectedTournament({ id: newTournamentId, ...newTournament });
+    setSetupComplete(false);
+    setView("setupOptions");
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (!initialAuthHandled.current) {
@@ -161,6 +200,7 @@ function App() {
           setEventCode("");
           setSelectedTournament(null);
           setTeams([]);
+          setIndividualPlayers([]);
           setTournamentName("");
           setView("adminDashboard");
           setAuthChecked(true);
@@ -188,9 +228,12 @@ function App() {
 
   useEffect(() => {
     if (selectedTournament) {
+      setEventFormat(selectedTournament.eventFormat || "team");
       setTournamentName(selectedTournament.name || "");
+      setIndividualPlayers(selectedTournament.players || []);
       setNumTeams(selectedTournament.numTeams || 2);
       setPlayersPerTeam(selectedTournament.playersPerTeam || 3);
+      setNumPlayers(selectedTournament.numPlayers || selectedTournament.players?.length || 4);
       setEventCode(selectedTournament.eventCode || "");
       setRules(selectedTournament.rules || "");
       setSelectedTheme(selectedTournament.theme || "defaultGray");
@@ -335,6 +378,7 @@ useEffect(() => {
           onGoTeamLeaderboard={() => setView("teamLeaderboard")}
           onShowRules={() => setShowRulesModal(true)}
           tournamentName={tournamentName} // 👈 pass it in here
+          showTeamLeaderboard={eventFormat !== "individual"}
         />
       )}
 
@@ -342,40 +386,18 @@ useEffect(() => {
       {view === "adminDashboard" && (
         <AdminDashboard
           user={user}
-          onStartNew={async () => {
-            const newTournamentId = `${user.uid}_${Date.now()}`;
-            const defaultCode = generateDefaultCode();
-            const newTournament = {
-              id: newTournamentId,
-              adminId: user.uid,
-              name: "",
-              teams: [],
-              numTeams: 2,
-              playersPerTeam: 3,
-              eventCode: defaultCode, // 👈 add this!
-              rules: "",
-              createdAt: new Date().toISOString(),
-            };
-            setEventCode(defaultCode); // 👈 also set it in state
-            setRules("");
-            setSelectedTheme("defaultGray");
-            setCustomTheme(defaultTheme);
-
-          
-            await setDoc(doc(db, "tournaments", newTournamentId), newTournament);
-            setTournamentName("");
-            setTeams([]);
-            setSelectedTournament({ id: newTournamentId, ...newTournament });
-            setSetupComplete(false);
-            setView("setupOptions");
-          }}
+          onStartNewTeam={() => startNewTournament("team")}
+          onStartNewIndividual={() => startNewTournament("individual")}
           
           onSelectTournament={(tournament) => {
             setSelectedTournament(tournament);
+            setEventFormat(tournament.eventFormat || "team");
             setTournamentName(tournament.name);
             setTeams(tournament.teams || []);
+            setIndividualPlayers(tournament.players || []);
             setSelectedTheme(tournament.theme || "defaultGray");
             setCustomTheme({ ...defaultTheme, ...(tournament.customTheme || {}) });
+            setNumPlayers(tournament.numPlayers || tournament.players?.length || 4);
             setSetupComplete(true);
             setView("setupOptions");
           }}
@@ -392,6 +414,7 @@ useEffect(() => {
               setSelectedTournament(null);
               setTournamentName("");
               setTeams([]);
+              setIndividualPlayers([]);
               setView("adminDashboard"); // force reload
             } catch (error) {
               console.error("❌ Failed to delete tournament:", error);
@@ -406,6 +429,8 @@ useEffect(() => {
           setTournamentName={setTournamentName}
           numTeams={numTeams}
           setNumTeams={setNumTeams}
+          numPlayers={numPlayers}
+          setNumPlayers={setNumPlayers}
           eventCode={eventCode}
           setEventCode={setEventCode}
           rules={rules}
@@ -416,6 +441,7 @@ useEffect(() => {
           setSelectedLogoFile={setSelectedLogoFile}
           currentLogoUrl={selectedTournament?.logoUrl || ""}
           onRemoveLogo={handleRemoveTournamentLogo}
+          eventFormat={eventFormat}
           selectedTheme={selectedTheme}
           setSelectedTheme={setSelectedTheme}
           customTheme={customTheme}
@@ -423,16 +449,26 @@ useEffect(() => {
           themeOptions={themeOptions}
           onContinue={async () => {
             let updatedTeams = selectedTournament?.teams || [];
+            let updatedPlayers = selectedTournament?.players || [];
           
-            if (updatedTeams.length === 0) {
+            if (eventFormat === "team" && updatedTeams.length === 0) {
               updatedTeams = Array.from({ length: numTeams }, () => ({
                 name: '',
                 color: '',
                 players: Array.from({ length: playersPerTeam }, () => ({ name: '', handicap: '' }))
               }));
             }
+
+            if (eventFormat === "individual" && updatedPlayers.length === 0) {
+              updatedPlayers = Array.from({ length: numPlayers }, (_, playerIndex) => ({
+                name: '',
+                handicap: '',
+                color: ['#2f6b2f', '#9f2f35', '#173f6b', '#b85f2e'][playerIndex] || '#8c8170'
+              }));
+            }
           
             setTeams(updatedTeams);
+            setIndividualPlayers(updatedPlayers);
           
             const code = eventCode?.trim() || generateDefaultCode();
           
@@ -454,9 +490,12 @@ useEffect(() => {
           
             if (selectedTournament?.id) {
               await saveTournamentData(selectedTournament.id, {
+                eventFormat,
                 name: tournamentName,
                 numTeams,
                 playersPerTeam,
+                numPlayers,
+                players: updatedPlayers,
                 eventCode: code,
                 rules,
                 logoUrl,
@@ -468,9 +507,12 @@ useEffect(() => {
                 prev
                   ? {
                       ...prev,
+                      eventFormat,
                       name: tournamentName,
                       numTeams,
                       playersPerTeam,
+                      numPlayers,
+                      players: updatedPlayers,
                       eventCode: code,
                       rules,
                       logoUrl,
@@ -482,7 +524,7 @@ useEffect(() => {
             }
             
             setSelectedLogoFile(null);
-            setView("teamSetup");
+            setView(eventFormat === "individual" ? "playerSetup" : "teamSetup");
           }}
           goBack={() => {
             setSelectedTournament(null); // Clear current selection
@@ -508,6 +550,34 @@ useEffect(() => {
           goBack={() => setView("setupOptions")}
           tournamentName={tournamentName}
           selectedTournamentId={selectedTournament?.id} // 👈 pass this in!
+        />
+      )}
+
+      {view === "playerSetup" && (
+        <PlayerSetup
+          players={individualPlayers}
+          setPlayers={setIndividualPlayers}
+          goNext={async () => {
+            if (selectedTournament?.id) {
+              await saveTournamentData(selectedTournament.id, {
+                eventFormat,
+                players: individualPlayers
+              });
+            }
+            setView("individualMatchPlanner");
+          }}
+          goBack={() => setView("setupOptions")}
+          tournamentName={tournamentName}
+          selectedTournamentId={selectedTournament?.id}
+        />
+      )}
+
+      {view === "individualMatchPlanner" && (
+        <IndividualMatchPlanner
+          players={individualPlayers}
+          setSelectedDate={(date) => setSelectedDate(date)}
+          goBack={() => setView("playerSetup")}
+          tournamentId={selectedTournament?.id}
         />
       )}
 
@@ -557,6 +627,8 @@ useEffect(() => {
           teamPoints={teamPoints}
           setTeamPointsInApp={setTeamPointsInApp}
           teams={teams}
+          individualPlayers={individualPlayers}
+          eventFormat={eventFormat}
         />
       )}
 
@@ -565,6 +637,8 @@ useEffect(() => {
     <IndividualLeaderboard
       selectedTournamentId={selectedTournament?.id}
       teams={teams}
+      individualPlayers={individualPlayers}
+      eventFormat={eventFormat}
     />
     {lastMatchView && (
       <button

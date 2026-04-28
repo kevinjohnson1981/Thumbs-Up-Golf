@@ -5,7 +5,7 @@ import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import { useRef } from "react";
 
-function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMatch, setScoresInApp, setTeamPointsInApp, teamPoints, teams = [] }) {
+function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMatch, setScoresInApp, setTeamPointsInApp, teamPoints, teams = [], individualPlayers = [], eventFormat = "team" }) {
 
   const [matchData, setMatchData] = useState(null);
   const [localPlayers, setLocalPlayers] = useState([]);
@@ -35,6 +35,17 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   };
 
   const getPlayerTeamFromTournament = (playerName) => {
+    if (eventFormat === "individual") {
+      const player = individualPlayers.find((entry) => entry.name === playerName);
+      return player
+        ? {
+            name: player.name,
+            color: player.color || "#8c8170",
+            players: [player],
+          }
+        : null;
+    }
+
     return teams.find((team) =>
       team.players?.some((p) => p.name === playerName)
     ) || null;
@@ -279,7 +290,11 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
   
     if (matchType === "strokePlay" || matchType === "stroke") {
-      const entries = selectedMatch.players || Object.keys(selectedMatch.participants || {});
+      const entries = Array.isArray(selectedMatch.players)
+        ? selectedMatch.players
+        : Array.isArray(selectedMatch.participants)
+        ? selectedMatch.participants
+        : Object.keys(selectedMatch.participants || {});
     
       const allPlayers = entries.map((entry) => {
         const playerName = typeof entry === "string" ? entry : entry.name;
@@ -434,6 +449,25 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   const scorecardRef = useRef(null);
   
   const updateScore = (playerName, holeIndex, grossScore) => {
+    if (grossScore === "") {
+      setScores((prev) => {
+        const updatedPlayerScores = { ...(prev[playerName] || {}) };
+        delete updatedPlayerScores[holeIndex];
+
+        if (Object.keys(updatedPlayerScores).length === 0) {
+          const nextScores = { ...prev };
+          delete nextScores[playerName];
+          return nextScores;
+        }
+
+        return {
+          ...prev,
+          [playerName]: updatedPlayerScores
+        };
+      });
+      return;
+    }
+
     const gross = parseInt(grossScore);
     if (isNaN(gross)) return;
   
@@ -618,6 +652,10 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   };
 
   const getTeamNameFromMatchData = (playerName) => {
+    if (eventFormat === "individual") {
+      return playerName;
+    }
+
     const team = matchData?.teams?.find((t) =>
       t.players.some((p) => p.name === playerName)
     );
@@ -756,55 +794,51 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       
       
       if (matchType === "individualMatch9") {
-        // 1️⃣ translate "front" / "back" → "front9" / "back9"
-        const halfKey = visibleHalf === "front" ? "front9" : "back9";
-      
-        // pairings for this half
-        const pairingsArr = selectedMatch?.pairings?.[halfKey] || [];
-      
-        // If we still don’t have pairings, bail early so we don’t crash
-        if (!Array.isArray(pairingsArr) || pairingsArr.length === 0) {
-          console.warn("No pairings found for", halfKey);
-          teamPoints = null;                   // nothing to save this time
+        const front9Pairings = selectedMatch?.pairings?.front9 || [];
+        const back9Pairings = selectedMatch?.pairings?.back9 || [];
+
+        if (!Array.isArray(front9Pairings) || front9Pairings.length === 0) {
+          console.warn("No pairings found for front9");
+          teamPoints = null;
         } else {
-          const holesToCheck = halfKey === "front9"
-            ? [...Array(9).keys()]             // 0-8
-            : [...Array(9).keys()].map(i => i + 9);   // 9-17
-      
-          const matchResults = getIndividualMatchScore(pairingsArr, holesToCheck);
-      
-          // ------------------------------------------------------------------
-          // Build two things:
-          //   a) resultObj – per-pairing breakdown you were showing in the UI
-          //   b) teamPoints – totals for each team so we can save to Firebase
-          // ------------------------------------------------------------------
-          const resultObj = {};
-          let teamATotal = 0;
-          let teamBTotal = 0;
-      
-          pairingsArr.forEach((pair, i) => {
-            const pointsA = matchResults[i]?.pointsA ?? 0;
-            const pointsB = matchResults[i]?.pointsB ?? 0;
-      
-            // per-pairing details (optional – only if you still want them)
-            resultObj[`${pair.playerA} vs ${pair.playerB}`] = { pointsA, pointsB };
-      
-            teamATotal += pointsA;
-            teamBTotal += pointsB;
-          });
-      
-          // Grab the team names that were chosen when the match was created
-          const teamAName = selectedMatch?.[halfKey]?.teamA || "Team A";
-          const teamBName = selectedMatch?.[halfKey]?.teamB || "Team B";
-      
-          teamPoints = {
-            [teamAName]: { total: teamATotal },
-            [teamBName]: { total: teamBTotal }
+          const sumMatchPoints = (pairingsArr, holesToCheck) => {
+            const matchResults = getIndividualMatchScore(pairingsArr, holesToCheck);
+            return pairingsArr.reduce(
+              (totals, pair, index) => {
+                totals.teamA += matchResults[index]?.pointsA ?? 0;
+                totals.teamB += matchResults[index]?.pointsB ?? 0;
+                return totals;
+              },
+              { teamA: 0, teamB: 0 }
+            );
           };
-      
-          // 👉 If you still want to keep the per-pairing breakdown in Firebase,
-          // merge it in too:
-          // teamPoints.breakdown = resultObj;
+
+          const front9Totals = sumMatchPoints(front9Pairings, [...Array(9).keys()]);
+          const back9Totals = Array.isArray(back9Pairings) && back9Pairings.length > 0
+            ? sumMatchPoints(back9Pairings, [...Array(9).keys()].map((i) => i + 9))
+            : { teamA: 0, teamB: 0 };
+
+          const teamAName =
+            selectedMatch?.front9?.teamA ||
+            selectedMatch?.back9?.teamA ||
+            "Team A";
+          const teamBName =
+            selectedMatch?.front9?.teamB ||
+            selectedMatch?.back9?.teamB ||
+            "Team B";
+
+          teamPoints = {
+            [teamAName]: {
+              front9: front9Totals.teamA,
+              back9: back9Totals.teamA,
+              total: front9Totals.teamA + back9Totals.teamA
+            },
+            [teamBName]: {
+              front9: front9Totals.teamB,
+              back9: back9Totals.teamB,
+              total: front9Totals.teamB + back9Totals.teamB
+            }
+          };
         }
       }
       
@@ -1259,14 +1293,19 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
                           }}
                         >
 
-                          <input
-                            type="number"
-                            min="1"
-                            max="10"
-                            className="score-input"
-                            value={scores[p.name]?.[realIndex]?.gross || ""}
-                            onChange={(e) => updateScore(p.name, realIndex, e.target.value)}
-                          />
+                          <div className="score-entry-input-row">
+                            <input
+                              type="number"
+                              min="1"
+                              max="10"
+                              inputMode="numeric"
+                              className="score-input"
+                              value={scores[p.name]?.[realIndex]?.gross || ""}
+                              onFocus={(e) => e.target.select()}
+                              onClick={(e) => e.target.select()}
+                              onChange={(e) => updateScore(p.name, realIndex, e.target.value)}
+                            />
+                          </div>
                           <div style={{ fontSize: "1.0em", color: "black" }}>
                             {net !== "" && <>Net: {net}</>}
                             <br />

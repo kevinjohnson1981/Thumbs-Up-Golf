@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "./firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
-function AdminDashboard({ user, onStartNew, onSelectTournament, onDeleteTournament }) {
+function AdminDashboard({ user, onStartNewTeam, onStartNewIndividual, onSelectTournament, onDeleteTournament }) {
   const [tournaments, setTournaments] = useState([]);
 
   useEffect(() => {
@@ -28,13 +28,18 @@ function AdminDashboard({ user, onStartNew, onSelectTournament, onDeleteTourname
           <p className="admin-eyebrow">Organizer Dashboard</p>
           <h2>Welcome back</h2>
           <p>
-            Create a new tournament, jump back into an existing weekend, or clean up an old event.
+            Choose the type of event you want to build, jump back into an existing weekend, or clean up an old event.
           </p>
         </div>
 
-        <button className="admin-primary-button" onClick={onStartNew}>
-          Start New Tournament
-        </button>
+        <div className="admin-hero-actions">
+          <button className="admin-primary-button" onClick={onStartNewTeam}>
+            New Team Tournament
+          </button>
+          <button className="admin-secondary-button" onClick={onStartNewIndividual}>
+            New Individual Tournament
+          </button>
+        </div>
       </section>
 
       <section className="admin-section-card">
@@ -72,6 +77,7 @@ function AdminDashboard({ user, onStartNew, onSelectTournament, onDeleteTourname
                 </div>
 
                 <div className="tournament-card-meta">
+                  <span>{tournament.eventFormat === "individual" ? "Individual event" : "Team event"}</span>
                   <span>{tournament.numTeams || 0} teams</span>
                   <span>{tournament.playersPerTeam || 0} players per team</span>
                 </div>
