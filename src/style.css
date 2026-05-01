@@ -492,6 +492,110 @@ select {
   justify-content: center;
 }
 
+.score-picker-button {
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  margin: 0;
+  border-radius: 8px;
+  border: 2px solid rgb(73, 73, 73);
+  background: white;
+  color: #173321;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: none;
+}
+
+.score-picker-button.empty {
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: rgba(23, 51, 33, 0.65);
+}
+
+.score-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 20, 15, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1200;
+}
+
+.score-picker-modal {
+  width: min(285px, 100%);
+  padding: 16px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--theme-card, #f5efe3) 90%, white 10%);
+  box-shadow: 0 20px 40px rgba(18, 34, 23, 0.26);
+}
+
+.score-picker-header {
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.score-picker-header h3 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.score-picker-header p {
+  margin: 0;
+  color: rgba(23, 51, 33, 0.72);
+}
+
+.score-picker-player-name {
+  font-weight: 800;
+  color: #173321;
+}
+
+.score-picker-hole-meta {
+  display: inline;
+  font-size: 1.1rem;
+  color: #173321;
+  font-weight: 700;
+}
+
+.score-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.score-picker-option {
+  min-width: 0;
+  padding: 9px 0;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.score-picker-single-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.score-picker-option-single {
+  width: calc((100% - 12px) / 3);
+  min-width: calc((100% - 12px) / 3);
+}
+
+.score-picker-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.score-picker-actions button {
+  flex: 1 1 0;
+}
+
 /* Hide number input spinners for cleaner look */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
@@ -2053,6 +2157,68 @@ input[type=number] {
 .team-leaderboard-day-cell {
   font-size: 0.9rem;
   font-weight: 650;
+}
+
+.match-status-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 190px));
+  justify-content: center;
+  gap: 10px;
+}
+
+.match-status-summary-card {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent, #2f7b49) 16%, transparent 84%);
+  background: color-mix(in srgb, var(--theme-card, #f5efe3) 72%, white 28%);
+}
+
+.match-status-summary-topline {
+  display: flex;
+  justify-content: center;
+}
+
+.match-status-summary-sides {
+  display: grid;
+  gap: 8px;
+}
+
+.match-status-summary-side {
+  display: grid;
+  gap: 4px;
+  justify-items: stretch;
+  text-align: left;
+}
+
+.match-status-summary-teamline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.match-status-summary-teamname {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.match-status-summary-teamscore {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #173321;
+}
+
+.match-status-summary-players {
+  font-size: 0.8rem;
+  color: rgba(20, 40, 29, 0.75);
+}
+
+@media (max-width: 680px) {
+  .match-status-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .match-planner-page .setup-panel {

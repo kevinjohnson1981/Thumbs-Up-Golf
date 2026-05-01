@@ -27,6 +27,7 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
       teamMatch9: "Team Match Play",
       individualMatch18: "Individual Match Play",
       individualMatch9: "Individual Match Play",
+      teamBestBall: "Team Best Ball",
       bestBall1: "Best Ball",
       bestBall2: "Best Ball",
     };
@@ -92,6 +93,9 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
         .filter(Boolean)
         .filter((name, index, values) => values.indexOf(name) === index)
         .map((name) => ({ name }));
+    } else if (matchObj.type === "teamBestBall") {
+      players = (matchObj.participants || [])
+        .flatMap((entry) => (entry.players || []).map((name) => ({ name })));
     }
     
   
@@ -164,6 +168,13 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
 
 
             const bestBallPlayers = match.matchTeams?.flatMap(team => team.players) || [];
+            const teamBestBallParticipants = Array.isArray(match.participants)
+              ? match.participants
+              : [];
+            const teamBestBallSummary = teamBestBallParticipants
+              .filter((entry) => Array.isArray(entry.players) && entry.players.length > 0)
+              .map((entry) => `${entry.teamName}: ${entry.players.join(", ")}`)
+              .join(" • ");
 
 
         const summary =
@@ -176,6 +187,7 @@ function SelectMatchType({ selectedDate, tournamentId, onSelectMatchType }) {
           (match.type === "teamMatch9" && match.participants &&
             `${(match.participants.team0?.players || []).join(", ")} vs ${(match.participants.team1?.players || []).join(", ")}`) ||
           (match.type === "individualMatch18" && individualMatch18Players.length > 0 && individualMatch18Players.join(", ")) ||
+          (match.type === "teamBestBall" && teamBestBallSummary) ||
           ((match.type === "bestBall1" || match.type === "bestBall2") && bestBallPlayers.length > 0 && bestBallPlayers.join(", ")) ||
           "Tap to begin scoring";
 

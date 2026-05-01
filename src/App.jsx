@@ -658,7 +658,10 @@ useEffect(() => {
 
 {view === "teamLeaderboard" && (
   <>
-    <TeamLeaderboard selectedTournamentId={selectedTournament?.id} />
+    <TeamLeaderboard
+      selectedTournamentId={selectedTournament?.id}
+      selectedDate={selectedDate}
+    />
     {lastMatchView && (
       <button
         onClick={() => {

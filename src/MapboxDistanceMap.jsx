@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import './MapboxMap.css';
 
-mapboxgl.accessToken = 'pk.eyJ1Ijoia2V2aW5qb2huc29uMTk4MSIsImEiOiJjbTl1MWhkY3EwNHk0MnFtd3AzOHdhODd4In0.j8Zo70d8nUYpM2f7OINoBw';
+const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN;
+mapboxgl.accessToken = mapboxToken || '';
 
 function MapboxDistanceMap() {
   const mapContainer = useRef(null);
@@ -63,6 +64,11 @@ function animateBall(map, lineCoords) {
 
   useEffect(() => {
     if (map.current) return;
+
+    if (!mapboxToken) {
+      console.error("Missing VITE_MAPBOX_TOKEN for MapboxDistanceMap.");
+      return;
+    }
 
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");

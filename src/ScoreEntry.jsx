@@ -15,6 +15,7 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   const holes = matchData?.teeBox?.holes || [];
   const [holeImages, setHoleImages] = useState({});
   const [selectedHoleImage, setSelectedHoleImage] = useState(null);
+  const [activeScorePicker, setActiveScorePicker] = useState(null);
   const getMatchPairings = () => {
     if (matchType !== "individualMatch9" || !selectedMatch?.pairings) return null;
   
@@ -46,9 +47,11 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
         : null;
     }
 
-    return teams.find((team) =>
-      team.players?.some((p) => p.name === playerName)
-    ) || null;
+    return (
+      teams.find((team) => team.players?.some((p) => p.name === playerName)) ||
+      matchData?.teams?.find((team) => team.players?.some((p) => p.name === playerName)) ||
+      null
+    );
   };
 
   const getTeamColor = (teamName) => {
@@ -255,6 +258,27 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
         team2: team1.players
       });
     }
+
+    if (matchType === "teamBestBall") {
+      const teamEntries = getTeamBestBallTeams();
+      const uniquePlayers = [...new Set(teamEntries.flatMap((entry) => entry.players || []))];
+
+      const allPlayers = uniquePlayers.map((playerName) => {
+        const teamEntry = teamEntries.find((entry) => entry.players?.includes(playerName));
+        const liveTeamObj = getLiveTeam(teamEntry?.teamName) || getPlayerTeamFromTournament(playerName);
+        const playerObj = liveTeamObj?.players?.find((p) => p.name === playerName);
+
+        return {
+          name: playerName,
+          handicap: parseInt(playerObj?.handicap || 0),
+          teamName: teamEntry?.teamName || liveTeamObj?.name || "",
+          teamColor: getLiveTeamColor(teamEntry?.teamName || liveTeamObj?.name || "")
+        };
+      });
+
+      setLocalPlayers(allPlayers);
+      setTeamPlayers({ team1: [], team2: [] });
+    }
     
     
     
@@ -334,12 +358,13 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
     
     
-  }, [selectedMatch, matchData, matchType, teams, scorecardTab]);
+  }, [selectedMatch, matchData, matchType, teams, individualPlayers, scorecardTab]);
   
 
   useEffect(() => {
     const fetchSavedScores = async () => {
       try {
+        if (!selectedMatch?.matchLabel) return;
         const scoreDocRef = doc(db, "tournaments", tournamentId, "scores", `scores_${selectedDate}_${matchType}_${selectedMatch.matchLabel?.replace(/\s+/g, "_") || "Match"}`
         );
         const scoreSnap = await getDoc(scoreDocRef);
@@ -355,10 +380,10 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       }
     };
 
-    if (selectedDate && matchType) {
+    if (selectedDate && matchType && selectedMatch?.matchLabel) {
       fetchSavedScores();
     }
-  }, [selectedDate, matchType]);
+  }, [selectedDate, matchType, selectedMatch?.matchLabel, tournamentId]);
 
   useEffect(() => {
     if (setScoresInApp) {
@@ -442,6 +467,19 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
   }}, [scores, matchData, players, matchType]);
 
+  useEffect(() => {
+    if (matchType !== "teamBestBall" || typeof setTeamPointsInApp !== "function") return;
+
+    const teamTotals = {};
+    getTeamBestBallTeams().forEach((entry) => {
+      teamTotals[entry.teamName] = {
+        total: getTeamBestBallToPar(entry.players || [], [...Array(18).keys()])
+      };
+    });
+
+    setTeamPointsInApp(teamTotals);
+  }, [scores, matchType, selectedMatch, holes.length]);
+
   
   
   
@@ -491,6 +529,10 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       }
     }));
   };
+
+  const activePickerPlayer = activeScorePicker
+    ? localPlayers.find((player) => player.name === activeScorePicker.playerName)
+    : null;
   
 
   if (loading) {
@@ -554,16 +596,52 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
   };
   
 
-  const getNetScore = (playerName, holeIndex) => {
+  function getNetScore(playerName, holeIndex) {
     const net = scores[playerName]?.[holeIndex]?.net;
     return isNaN(net) ? null : net;
-  };
+  }
   
 
-  const getTeamBestBallScore = (playerNames, holeIndex) => {
+  function getTeamBestBallScore(playerNames, holeIndex) {
     const netScores = playerNames.map(name => getNetScore(name, holeIndex)).filter(score => score !== null);
     return netScores.length ? Math.min(...netScores) : null;
-  };
+  }
+
+  function getBestBallHoleWinners(holeIndex) {
+    if (matchType !== "teamBestBall") return [];
+
+    return getTeamBestBallTeams().flatMap((teamEntry) => {
+      const bestNet = getTeamBestBallScore(teamEntry.players || [], holeIndex);
+      if (bestNet == null) return [];
+
+      return (teamEntry.players || []).filter(
+        (playerName) => scores[playerName]?.[holeIndex]?.net === bestNet
+      );
+    });
+  }
+
+  function getTeamBestBallToPar(playerNames, holesRange) {
+    let total = 0;
+    let hasScores = false;
+
+    holesRange.forEach((holeIndex) => {
+      const bestNet = getTeamBestBallScore(playerNames, holeIndex);
+      const holePar = holes[holeIndex]?.par;
+
+      if (bestNet == null || holePar == null || Number.isNaN(holePar)) return;
+
+      total += bestNet - holePar;
+      hasScores = true;
+    });
+
+    return hasScores ? total : null;
+  }
+
+  function formatToPar(value) {
+    if (value == null || value === "") return "—";
+    if (value === 0) return "E";
+    return value > 0 ? `+${value}` : `${value}`;
+  }
 
   const getIndividualMatchScore = (pairings, holesRange) => {
     const results = [];
@@ -661,6 +739,12 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     );
     return team?.name || null;
   };
+
+  function getTeamBestBallTeams() {
+    return (selectedMatch?.participants || []).filter(
+      (entry) => entry?.teamName && Array.isArray(entry.players) && entry.players.length > 0
+    );
+  }
   
 
   const saveScoresToFirebase = async () => {
@@ -718,6 +802,16 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
           }
       
           teamPoints[teamName].total += teamScore;
+        });
+      }
+
+      if (matchType === "teamBestBall") {
+        teamPoints = {};
+        const teamEntries = getTeamBestBallTeams();
+
+        teamEntries.forEach((entry) => {
+          const totalToPar = getTeamBestBallToPar(entry.players || [], [...Array(18).keys()]);
+          teamPoints[entry.teamName] = { total: totalToPar };
         });
       }
       
@@ -999,6 +1093,27 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
     
   })();
 
+  const teamBestBallStatusBlock = (() => {
+    if (matchType !== "teamBestBall") return null;
+
+    const holesToCheck = visibleHalf === "front"
+      ? [...Array(9).keys()]
+      : [...Array(9).keys()].map((i) => i + 9);
+    const teamEntries = getTeamBestBallTeams();
+
+    if (teamEntries.length === 0) return null;
+
+    return (
+      <div className="match-status" style={{ marginBottom: "10px" }}>
+        {teamEntries.map((teamEntry) => (
+          <p key={teamEntry.teamName}>
+            <strong>{teamEntry.teamName}:</strong> {formatToPar(getTeamBestBallToPar(teamEntry.players || [], holesToCheck))}
+          </p>
+        ))}
+      </div>
+    );
+  })();
+
   const matchPlayStatusBlock = (() => {
     if (!["teamMatch18", "teamMatch9", "teamMatchFront9", "teamMatchBack9", "individualMatch18"].includes(matchType)) return null;
   
@@ -1045,6 +1160,7 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
       <section className="admin-section-card score-entry-section-card" ref={scorecardRef}>
 
       {bestBallStatusBlock}
+      {teamBestBallStatusBlock}
 
       
 {matchType === "stableford" && teamPoints && (
@@ -1287,6 +1403,14 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
                                   return lightenColor(teamColor, 0.75);
                                 }
                               }
+
+                              if (matchType === "teamBestBall") {
+                                const countingPlayers = getBestBallHoleWinners(realIndex);
+                                if (countingPlayers.includes(p.name)) {
+                                  const teamColor = p.teamColor || "#cccccc";
+                                  return lightenColor(teamColor, 0.75);
+                                }
+                              }
                             
                               return "white";
                             })()
@@ -1294,17 +1418,18 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
                         >
 
                           <div className="score-entry-input-row">
-                            <input
-                              type="number"
-                              min="1"
-                              max="10"
-                              inputMode="numeric"
-                              className="score-input"
-                              value={scores[p.name]?.[realIndex]?.gross || ""}
-                              onFocus={(e) => e.target.select()}
-                              onClick={(e) => e.target.select()}
-                              onChange={(e) => updateScore(p.name, realIndex, e.target.value)}
-                            />
+                            <button
+                              type="button"
+                              className={`score-picker-button ${gross === "" ? "empty" : ""}`}
+                              onClick={() =>
+                                setActiveScorePicker({
+                                  playerName: p.name,
+                                  holeIndex: realIndex,
+                                })
+                              }
+                            >
+                              {gross === "" ? "Tap" : gross}
+                            </button>
                           </div>
                           <div style={{ fontSize: "1.0em", color: "black" }}>
                             {net !== "" && <>Net: {net}</>}
@@ -1339,6 +1464,73 @@ function ScoreEntry({ selectedDate, tournamentId, matchType, players, selectedMa
           <div className="hole-image-modal">
             <img src={selectedHoleImage} alt="Hole view" />
             <button onClick={() => setSelectedHoleImage(null)}>Return to Match</button>
+          </div>
+        </div>
+      )}
+
+      {activeScorePicker && (
+        <div className="score-picker-overlay" onClick={() => setActiveScorePicker(null)}>
+          <div className="score-picker-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="score-picker-header">
+              <h3>
+                {`Hole ${activeScorePicker.holeIndex + 1}`}
+                <span className="score-picker-hole-meta">
+                  {` • Par ${holes[activeScorePicker.holeIndex]?.par ?? "-"}`}
+                </span>
+              </h3>
+              <p className="score-picker-player-name">
+                {activePickerPlayer?.name || activeScorePicker.playerName}
+              </p>
+            </div>
+
+            <div className="score-picker-grid">
+              {Array.from({ length: 9 }, (_, index) => index + 1).map((scoreValue) => (
+                <button
+                  key={scoreValue}
+                  type="button"
+                  className="score-picker-option"
+                  onClick={() => {
+                    updateScore(activeScorePicker.playerName, activeScorePicker.holeIndex, String(scoreValue));
+                    setActiveScorePicker(null);
+                  }}
+                >
+                  {scoreValue}
+                </button>
+              ))}
+            </div>
+
+            <div className="score-picker-single-row">
+              <button
+                type="button"
+                className="score-picker-option score-picker-option-single"
+                onClick={() => {
+                  updateScore(activeScorePicker.playerName, activeScorePicker.holeIndex, "10");
+                  setActiveScorePicker(null);
+                }}
+              >
+                10
+              </button>
+            </div>
+
+            <div className="score-picker-actions">
+              <button
+                type="button"
+                className="admin-secondary-button"
+                onClick={() => {
+                  updateScore(activeScorePicker.playerName, activeScorePicker.holeIndex, "");
+                  setActiveScorePicker(null);
+                }}
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                className="admin-primary-button"
+                onClick={() => setActiveScorePicker(null)}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

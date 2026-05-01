@@ -151,6 +151,55 @@ const getIndividualNineBackNinePlayers = (playersA = [], playersB = []) => {
   return { playersA, playersB: [...playersB].reverse() };
 };
 
+const getTeamBestBallParticipants = (match) =>
+  (match.participants || []).filter((entry) => Array.isArray(entry.players) && entry.players.length > 0);
+
+const toggleTeamBestBallPlayer = (matchIndex, teamName, playerName, checked) => {
+  setMatchSetups((prev) =>
+    prev.map((match, index) => {
+      if (index !== matchIndex) return match;
+
+      const existingParticipants = Array.isArray(match.participants) ? [...match.participants] : [];
+      const teamEntryIndex = existingParticipants.findIndex((entry) => entry.teamName === teamName);
+
+      if (teamEntryIndex === -1) {
+        return checked
+          ? {
+              ...match,
+              participants: [...existingParticipants, { teamName, players: [playerName] }],
+            }
+          : match;
+      }
+
+      const currentPlayers = existingParticipants[teamEntryIndex].players || [];
+      let nextPlayers = currentPlayers;
+
+      if (checked) {
+        if (currentPlayers.includes(playerName) || currentPlayers.length >= 4) {
+          return match;
+        }
+        nextPlayers = [...currentPlayers, playerName];
+      } else {
+        nextPlayers = currentPlayers.filter((name) => name !== playerName);
+      }
+
+      if (nextPlayers.length === 0) {
+        existingParticipants.splice(teamEntryIndex, 1);
+      } else {
+        existingParticipants[teamEntryIndex] = {
+          ...existingParticipants[teamEntryIndex],
+          players: nextPlayers,
+        };
+      }
+
+      return {
+        ...match,
+        participants: existingParticipants,
+      };
+    })
+  );
+};
+
   
 
   const addDayToFirebase = async () => {
@@ -174,6 +223,35 @@ const getIndividualNineBackNinePlayers = (playersA = [], playersB = []) => {
           return;
         }
       }
+
+      if (m.type === "teamBestBall") {
+        const participants = getTeamBestBallParticipants(m);
+        const totalPlayers = participants.reduce((count, entry) => count + entry.players.length, 0);
+
+        if (totalPlayers < 2) {
+          alert(`${m.matchLabel}: choose at least two players across the group.`);
+          return;
+        }
+      }
+    }
+
+    const bestBallAssignments = new Map();
+    for (const match of matchSetups) {
+      if (match.type !== "teamBestBall") continue;
+
+      let hasDuplicatePlayer = false;
+      getTeamBestBallParticipants(match).forEach((entry) => {
+        entry.players.forEach((playerName) => {
+          if (bestBallAssignments.has(playerName)) {
+            alert(`${playerName} is already assigned to ${bestBallAssignments.get(playerName)}. Each player can only appear in one Team Best Ball group per day.`);
+            hasDuplicatePlayer = true;
+            return;
+          }
+          bestBallAssignments.set(playerName, match.matchLabel);
+        });
+      });
+
+      if (hasDuplicatePlayer) return;
     }
     
 
@@ -232,6 +310,15 @@ const getIndividualNineBackNinePlayers = (playersA = [], playersB = []) => {
             back9 : makePairs(b9.playersA, b9.playersB)
           },
       
+          ...(match.excludeFromIndividual ? { excludeFromIndividual: true } : {})
+        };
+      }
+
+      if (match.type === "teamBestBall") {
+        return {
+          matchLabel: match.matchLabel,
+          type: "teamBestBall",
+          participants: getTeamBestBallParticipants(match),
           ...(match.excludeFromIndividual ? { excludeFromIndividual: true } : {})
         };
       }
@@ -504,6 +591,7 @@ const getIndividualNineBackNinePlayers = (playersA = [], playersB = []) => {
         <option value="individualMatch18">Individual Match Play (18 holes)</option>
         <option value="individualMatch9">Individual Match Play (Front/Back 9)</option>
         <option value="stableford">Stableford</option>
+        <option value="teamBestBall">Team Best Ball</option>
       </select>
     </div>
 
@@ -836,6 +924,60 @@ const getIndividualNineBackNinePlayers = (playersA = [], playersB = []) => {
         ))}
       </div>
     ))}
+  </div>
+)}
+
+{match.type === "teamBestBall" && (
+  <div className="individual-nine-builder">
+    <h4>Team Best Ball Group</h4>
+    <p className="setup-help-text">
+      Select any 2 or more players in this group. Players can come from one team or multiple teams, and each player can only appear in one Team Best Ball group for the day.
+    </p>
+
+    {teams.map((team) => {
+      const selectedEntry = getTeamBestBallParticipants(match).find((entry) => entry.teamName === team.name);
+      const selectedPlayers = selectedEntry?.players || [];
+
+      return (
+        <div key={team.name} className="individual-nine-team-picker">
+          <div className="match-setup-inline-field">
+            <label>{team.name}:</label>
+            <span style={{ fontSize: "0.92rem", color: "#6f6355" }}>
+              {selectedPlayers.length > 0 ? `${selectedPlayers.length} selected` : "No players selected"}
+            </span>
+          </div>
+
+          {team.players?.map((player) => {
+            const isChecked = selectedPlayers.includes(player.name);
+            const isDisabled = !isChecked && selectedPlayers.length >= 4;
+
+            return (
+              <label key={player.name} className="checkbox-label" style={{ display: "flex", alignItems: "center", gap: "8px", width: "fit-content", margin: "4px 0" }}>
+                <input
+                  type="checkbox"
+                  style={{ width: "16px", margin: 0, flex: "0 0 auto" }}
+                  checked={isChecked}
+                  disabled={isDisabled}
+                  onChange={(e) => toggleTeamBestBallPlayer(index, team.name, player.name, e.target.checked)}
+                />
+                <span>{formatPlayerOptionLabel(player)}</span>
+              </label>
+            );
+          })}
+        </div>
+      );
+    })}
+
+    {getTeamBestBallParticipants(match).length > 0 && (
+      <div className="individual-nine-preview">
+        <strong>Selected teams</strong>
+        <span>
+          {getTeamBestBallParticipants(match)
+            .map((entry) => `${entry.teamName}: ${entry.players.join(", ")}`)
+            .join(" | ")}
+        </span>
+      </div>
+    )}
   </div>
 )}
 
